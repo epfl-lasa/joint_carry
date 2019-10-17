@@ -10,6 +10,19 @@
 #include <vector>
 
 
+// #include <qb_interface/cubeRef.h>
+#include <qb_interface/handRef.h>
+
+// #include <qb_interface/cubeEq_Preset.h>
+// #include <qb_interface/cubePos.h>
+// #include <qb_interface/handPos.h>
+
+// #include <qb_interface/cubeCurrent.h>
+// #include <qb_interface/handCurrent.h>
+
+
+
+
 // #include <Eigen/Dense>
 // #include <Eigen3/Eigen/Dense>
 
@@ -60,6 +73,9 @@ private:
 
 	ros::Subscriber sub_right_robot_pose_;
 	ros::Subscriber sub_left_robot_pose_;
+
+	ros::Publisher pub_right_hand_command_;
+	ros::Publisher pub_left_hand_command_;
 	// ros::Publisher pub_desired_twist_;
 	// ros::Publisher pub_desired_twist_filtered_;
 	// ros::Publisher pub_target_;
@@ -67,6 +83,8 @@ private:
 
 	std::string topic_name_right_robot_pose_;
 	std::string topic_name_left_robot_pose_;
+	std::string topic_name_right_hand_command_;
+    std::string topic_name_left_hand_command_;
 	std::string output_topic_name_;
 
 	// geometry_msgs::Pose msg_real_pose_;
@@ -76,6 +94,8 @@ private:
 	// nav_msgs::Path msg_DesiredPath_;
 	// int MAX_FRAME = 200;
 
+	qb_interface::handRef right_hand_closure_;
+	qb_interface::handRef left_hand_closure_;
 
 
 	Vector3d right_robot_position_;
@@ -98,6 +118,8 @@ public:
 	                  double frequency,
 	                  std::string topic_name_right_robot_pose,
 	                  std::string topic_name_left_robot_pose,
+	                  std::string topic_name_right_hand_command,
+	                  std::string topic_name_left_hand_command,
 	                  std::string output_topic_name);
 
 	bool Init();

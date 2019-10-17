@@ -8,11 +8,15 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
                                      double frequency,
                                      std::string topic_name_right_robot_pose,
                                      std::string topic_name_left_robot_pose,
+                                     std::string topic_name_right_hand_command,
+                                     std::string topic_name_left_hand_command,
                                      std::string output_topic_name)
 	: nh_(n),
 	  loop_rate_(frequency),
 	  topic_name_right_robot_pose_(topic_name_right_robot_pose),
 	  topic_name_left_robot_pose_(topic_name_left_robot_pose),
+	  topic_name_right_hand_command_(topic_name_right_hand_command),
+	  topic_name_left_hand_command_(topic_name_left_hand_command),
 	  output_topic_name_(output_topic_name),
 	  dt_(1 / frequency)
 	  // scaling_factor_(1),
@@ -32,8 +36,18 @@ bool JointCarryController::Init() {
 	                                this, ros::TransportHints().reliable().tcpNoDelay());
 	// pub_desired_twist_ = nh_.advertise<geometry_msgs::TwistStamped>(output_topic_name_, 1);
 
+	pub_right_hand_command_ = nh_.advertise<qb_interface::handRef>(topic_name_right_hand_command_,1);
+	pub_left_hand_command_ = nh_.advertise<qb_interface::handRef>(topic_name_left_hand_command_,1);
 
 
+	// float32 closure[1]; 
+	// closure[0] = 19000.0;
+
+	right_hand_closure_.closure.clear();
+	right_hand_closure_.closure.push_back(0.0);
+
+	left_hand_closure_.closure.clear();
+	left_hand_closure_.closure.push_back(0.0);
 
 	if (nh_.ok()) { // Wait for poses being published
 		ros::spinOnce();
@@ -56,7 +70,15 @@ void JointCarryController::Run() {
 
 	while (nh_.ok()) {
 
-		ROS_WARN_THROTTLE(1, "Doing nothing ....");
+		ROS_WARN_THROTTLE(1, "Updating the hand commands ....");
+
+		pub_right_hand_command_.publish(right_hand_closure_);
+		pub_left_hand_command_.publish(left_hand_closure_);
+
+
+		// pub_right_hand_command_.publish()
+
+
 
 		loop_rate_.sleep();
 	}

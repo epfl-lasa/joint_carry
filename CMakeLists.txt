@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  qb_interface
 )
 
 
@@ -104,9 +105,11 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
+ INCLUDE_DIRS include
 #  LIBRARIES joint_carry
 #  CATKIN_DEPENDS roscpp rospy std_msgs
+  CATKIN_DEPENDS qb_interface
+
 #  DEPENDS system_lib
 )
 
@@ -161,7 +164,9 @@ add_executable(joint_carry_node
 
 add_dependencies(joint_carry_node 
 	${${PROJECT_NAME}_EXPORTED_TARGETS} 
-	${catkin_EXPORTED_TARGETS})
+	${catkin_EXPORTED_TARGETS}
+	# external_package_generate_messages_cpp
+	)
 
 
 ## Specify libraries to link a library or executable target against
