@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<launch>
+
+
+# input_topic name should contatin: geometry_msgs::Pose
+# output_topic_name will write geometry_msgs::Twist
+
+  <group ns="ds1">
+    <param name="input_topic_name" value="/lwr/ee_pose"/>
+    <param name="output_topic_name" value="/ds1/desired_velocity"/>
+<!--     <rosparam command="load" file="$(find ds_motion_generator)/config/s4_back_GMM.yml"/>
+ -->    <node name="controller_node" pkg="joint_carry" type="joint_carry_node" output="screen"/>
+
+    <!-- # doesn't work yet, but I should follow this style -->
+    <!-- <remap from="/ds1/filter/desired_velocity" to="/lwr/joint_controllers/passive_ds_command_vel" /> -->
+
+  </group>
+
+
+
+</launch>
