@@ -2,13 +2,30 @@
 #define __JOINT_CONTROLLER_H__
 
 #include "ros/ros.h"
-//#include "geometry_msgs/Pose.h"
+#include "geometry_msgs/Pose.h"
 // #include "geometry_msgs/Twist.h"
 //#include "geometry_msgs/TwistStamped.h"
 // #include "geometry_msgs/PointStamped.h"
 
-
 #include <vector>
+
+
+// #include <Eigen/Dense>
+// #include <Eigen3/Eigen/Dense>
+
+// #include "eigen3/Eigen/Core"
+// #include "eigen3/Eigen/Geometry"
+#include "eigen3/Eigen/Dense"
+
+using namespace Eigen;
+
+using namespace Eigen;
+
+typedef Matrix<double, 3, 1> Vector3d;
+// typedef Matrix<double, 6, 1> Vector6d;
+// typedef Matrix<double, 6, 6> Matrix6d;
+
+
 
 
 
@@ -41,13 +58,15 @@ private:
 	ros::NodeHandle nh_;
 	ros::Rate loop_rate_;
 
-	// ros::Subscriber sub_real_pose_;
+	ros::Subscriber sub_right_robot_pose_;
+	ros::Subscriber sub_left_robot_pose_;
 	// ros::Publisher pub_desired_twist_;
 	// ros::Publisher pub_desired_twist_filtered_;
 	// ros::Publisher pub_target_;
 	// ros::Publisher pub_DesiredPath_;
 
-	std::string input_topic_name_;
+	std::string topic_name_right_robot_pose_;
+	std::string topic_name_left_robot_pose_;
 	std::string output_topic_name_;
 
 	// geometry_msgs::Pose msg_real_pose_;
@@ -59,7 +78,8 @@ private:
 
 
 
-
+	Vector3d right_robot_position_;
+	Vector3d left_robot_position_;
 	// MathLib::Vector real_pose_;
 	// MathLib::Vector target_pose_;
 	// MathLib::Vector target_offset_;
@@ -76,7 +96,8 @@ private:
 public:
 	JointCarryController(ros::NodeHandle &n,
 	                  double frequency,
-	                  std::string input_topic_name,
+	                  std::string topic_name_right_robot_pose,
+	                  std::string topic_name_left_robot_pose,
 	                  std::string output_topic_name);
 
 	bool Init();
@@ -87,7 +108,8 @@ private:
 
 
 
-	// void UpdateRealPosition(const geometry_msgs::Pose::ConstPtr& msg);
+	void UpdateRightRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg);
+	void UpdateLeftRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg);
 
 
 

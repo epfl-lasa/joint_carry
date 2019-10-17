@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -123,7 +124,9 @@ set(SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src)
 include_directories(
 	include
 	${catkin_INCLUDE_DIRS}
+	${Eigen3_INCLUDE_DIRS}
 )
+
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}

@@ -6,11 +6,13 @@
 
 JointCarryController::JointCarryController(ros::NodeHandle &n,
                                      double frequency,
-                                     std::string input_topic_name,
+                                     std::string topic_name_right_robot_pose,
+                                     std::string topic_name_left_robot_pose,
                                      std::string output_topic_name)
 	: nh_(n),
 	  loop_rate_(frequency),
-	  input_topic_name_(input_topic_name),
+	  topic_name_right_robot_pose_(topic_name_right_robot_pose),
+	  topic_name_left_robot_pose_(topic_name_left_robot_pose),
 	  output_topic_name_(output_topic_name),
 	  dt_(1 / frequency)
 	  // scaling_factor_(1),
@@ -22,8 +24,12 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 
 bool JointCarryController::Init() {
 
-	// sub_real_pose_ = nh_.subscribe( input_topic_name_ , 1000,
-	//                                 &JointCarryController::UpdateRealPosition, this, ros::TransportHints().reliable().tcpNoDelay());
+	sub_right_robot_pose_ = nh_.subscribe(topic_name_right_robot_pose_ , 1000,
+	                                &JointCarryController::UpdateRightRobotEEPose, 
+	                                this, ros::TransportHints().reliable().tcpNoDelay());
+	sub_left_robot_pose_ = nh_.subscribe(topic_name_left_robot_pose_ , 1000,
+	                                &JointCarryController::UpdateLeftRobotEEPose, 
+	                                this, ros::TransportHints().reliable().tcpNoDelay());
 	// pub_desired_twist_ = nh_.advertise<geometry_msgs::TwistStamped>(output_topic_name_, 1);
 
 
@@ -56,27 +62,35 @@ void JointCarryController::Run() {
 	}
 }
 
-// void JointCarryController::UpdateRealPosition(const geometry_msgs::Pose::ConstPtr& msg) {
+void JointCarryController::UpdateRightRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg) {
 
-// 	msg_real_pose_ = *msg;
+	// msg_real_pose_ = *msg;
 
-// 	real_pose_(0) = msg_real_pose_.position.x;
-// 	real_pose_(1) = msg_real_pose_.position.y;
-// 	real_pose_(2) = msg_real_pose_.position.z;
+	right_robot_position_(0) = msg->position.x;
+	right_robot_position_(1) = msg->position.y;
+	right_robot_position_(2) = msg->position.z;
 
-// 	// double qtx = msg_real_pose_.orientation.x;
-// 	// double qty = msg_real_pose_.orientation.y;
-// 	// double qtz = msg_real_pose_.orientation.z;
-// 	// double qtw = msg_real_pose_.orientation.w;
+	// double qtx = msg_real_pose_.orientation.x;
+	// double qty = msg_real_pose_.orientation.y;
+	// double qtz = msg_real_pose_.orientation.z;
+	// double qtw = msg_real_pose_.orientation.w;
 
-// 	// tf::Quaternion q(qtx, qty, qtz, qtw);
-// 	// tf::Matrix3x3 m(q);
-// 	// double roll, pitch, yaw;
-// 	// m.getRPY(roll, pitch, yaw);
+}
 
-// 	// real_pose_(3?) = roll;
-// 	// real_pose_(4?) = pitch;
-// 	// real_pose_(5?) = yaw;
 
-// }
+void JointCarryController::UpdateLeftRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg) {
+
+	// msg_real_pose_ = *msg;
+
+	left_robot_position_(0) = msg->position.x;
+	left_robot_position_(1) = msg->position.y;
+	left_robot_position_(2) = msg->position.z;
+
+	// double qtx = msg_real_pose_.orientation.x;
+	// double qty = msg_real_pose_.orientation.y;
+	// double qtz = msg_real_pose_.orientation.z;
+	// double qtw = msg_real_pose_.orientation.w;
+
+}
+
 

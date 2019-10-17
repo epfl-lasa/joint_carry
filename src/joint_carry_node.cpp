@@ -12,7 +12,8 @@ int main(int argc, char **argv)
 
 
   // Parameters
-  std::string input_topic_name;
+  std::string topic_name_right_robot_pose;
+  std::string topic_name_left_robot_pose;
   std::string output_topic_name;
   
   int K_gmm;
@@ -20,7 +21,12 @@ int main(int argc, char **argv)
  
 
 
-  if (!nh.getParam("input_topic_name", input_topic_name))   {
+  if (!nh.getParam("topic_name_right_robot_pose", topic_name_right_robot_pose))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the input. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_left_robot_pose", topic_name_left_robot_pose))   {
     ROS_ERROR("Couldn't retrieve the topic name for the input. ");
     // return -1;
   }
@@ -46,8 +52,9 @@ int main(int argc, char **argv)
   ROS_INFO("Starting the joint carry controller...");
 
   JointCarryController joint_carry_controller(nh, frequency,
-                                            input_topic_name,
-                                        output_topic_name);
+                                              topic_name_right_robot_pose,
+                                              topic_name_left_robot_pose,
+                                              output_topic_name);
   if (!joint_carry_controller.Init()) {
     return -1;
   }
