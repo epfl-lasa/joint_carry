@@ -78,6 +78,8 @@ void JointCarryController::Run() {
 
 		// pub_right_hand_command_.publish()
 
+	right_hand_closure_.closure.clear();
+	right_hand_closure_.closure.push_back(19000.0);
 
 
 		loop_rate_.sleep();

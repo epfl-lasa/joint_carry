@@ -2,15 +2,19 @@
 <launch>
 
 
-# input_topic name should contatin: geometry_msgs::Pose
-# output_topic_name will write geometry_msgs::Twist
+ <group ns="right_side">
+	<arg name="right_hand_setting" default="$(find joint_carry)/config/right_qb_hand.yaml"/>
+	<rosparam command="load" file="$(arg right_hand_setting)"/>
+	<node name="qb_interface_node" pkg="qb_interface" type="qb_interface" args="0" output="screen" />
+</group>
+
 
   <group ns="main_node">
     <param name="topic_name_right_robot_pose" value="/lwr/ee_pose"/>
     <param name="topic_name_left_robot_pose" value="/lwr/ee_pose"/>
 
-    <param name="topic_name_right_hand_command" value="/right/qb_class/hand_ref"/>
-    <param name="topic_name_left_hand_command" value="/left/qb_class/hand_ref"/>
+    <param name="topic_name_right_hand_command" value="/right_side/qb_interface_node_/qb_class/hand_ref"/>
+    <param name="topic_name_left_hand_command" value="/left_side/qb_interface_node_/qb_class/hand_ref"/>
 
     <param name="output_topic_name" value="/ds1/desired_velocity"/>
 <!--     <rosparam command="load" file="$(find ds_motion_generator)/config/s4_back_GMM.yml"/>
@@ -21,6 +25,8 @@
 
   </group>
 
-ss
+
+
+
 
 </launch>

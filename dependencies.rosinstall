@@ -1,0 +1,4 @@
+ - git:
+    local-name: QBHand
+    uri: https://github.com/epfl-lasa/QBHand
+    version: mahdi
