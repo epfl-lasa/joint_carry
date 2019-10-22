@@ -21,6 +21,10 @@
 // #include <qb_interface/handCurrent.h>
 
 
+#include <tf/transform_listener.h>
+// #include <tf/transform_datatypes.h>
+
+#include <tf_conversions/tf_eigen.h>
 
 
 // #include <Eigen/Dense>
@@ -32,11 +36,9 @@
 
 using namespace Eigen;
 
-using namespace Eigen;
-
 typedef Matrix<double, 3, 1> Vector3d;
 // typedef Matrix<double, 6, 1> Vector6d;
-// typedef Matrix<double, 6, 6> Matrix6d;
+typedef Matrix<double, 6, 6> Matrix6d;
 
 
 
@@ -111,6 +113,11 @@ private:
 	// double scaling_factor_;
 	// double ds_vel_limit_;
 
+	  Matrix6d rotation_grasp_right_;
+	  Matrix6d rotation_grasp_left_;
+
+tf::TransformListener tf_listener_;
+
 
 
 public:
@@ -132,6 +139,17 @@ private:
 
 	void UpdateRightRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg);
 	void UpdateLeftRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg);
+
+
+	void UpdateRightRobotTask();
+
+
+	void wait_for_transformtaions();
+	bool get_rotation_matrix(Matrix6d & rotation_matrix,
+    tf::TransformListener & listener,
+    std::string from_frame,
+    std::string to_frame);
+
 
 
 

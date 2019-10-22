@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   qb_interface
+  tf
+  tf_conversions
 )
 
 

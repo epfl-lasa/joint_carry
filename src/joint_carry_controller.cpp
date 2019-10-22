@@ -59,6 +59,8 @@ bool JointCarryController::Init() {
 		return false;
 	}
 
+	wait_for_transformtaions();
+
 }
 
 
@@ -83,6 +85,9 @@ void JointCarryController::Run() {
 
 	left_hand_closure_.closure.clear();
 	left_hand_closure_.closure.push_back(19000.0);
+
+
+   UpdateRightRobotTask();
 
 
 		loop_rate_.sleep();
@@ -121,3 +126,58 @@ void JointCarryController::UpdateLeftRobotEEPose(const geometry_msgs::Pose::Cons
 }
 
 
+void JointCarryController::UpdateRightRobotTask(){
+	
+ 
+
+ get_rotation_matrix(rotation_grasp_right_, tf_listener_,
+                              "right_lwr_base_link", "grasp_right");
+
+ ROS_INFO_STREAM_THROTTLE(1, "goal is at:" << rotation_grasp_right_(0,0) << "\t" <<
+ 	rotation_grasp_right_(1,0));
+}
+
+
+void JointCarryController::wait_for_transformtaions(){
+
+  tf::TransformListener listener;
+  rotation_grasp_right_.setZero();
+  rotation_grasp_left_.setZero();
+
+  while (!get_rotation_matrix(rotation_grasp_right_, listener,
+                              "right_lwr_base_link", "grasp_right")) {
+	ROS_WARN_STREAM_THROTTLE(1, "Waiting for the TF of the right grasp point: ");
+    sleep(1);
+  }
+
+    while (!get_rotation_matrix(rotation_grasp_left_, listener,
+                              "right_lwr_base_link", "grasp_left")) {
+	ROS_WARN_STREAM_THROTTLE(1, "Waiting for the TF of the left grasp point: ");
+    sleep(1);
+  }
+
+}
+
+
+bool JointCarryController::get_rotation_matrix(Matrix6d & rotation_matrix,
+    tf::TransformListener & listener,
+    std::string from_frame,
+    std::string to_frame) {
+  tf::StampedTransform transform;
+  Matrix3d rotation_from_to;
+  try {
+    listener.lookupTransform(from_frame, to_frame,
+                             ros::Time(0), transform);
+    tf::matrixTFToEigen(transform.getBasis(), rotation_from_to);
+    rotation_matrix.setZero();
+    rotation_matrix.topLeftCorner(3, 3) = rotation_from_to;
+    rotation_matrix.bottomRightCorner(3, 3) = rotation_from_to;
+  }
+  catch (tf::TransformException ex) {
+    rotation_matrix.setZero();
+    ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF from: " << from_frame << " to: " << to_frame );
+    return false;
+  }
+
+  return true;
+}
