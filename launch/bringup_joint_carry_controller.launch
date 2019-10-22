@@ -3,7 +3,7 @@
 
 	<!-- Force torque sensor config -->
 	<arg  name="ip_address_right"  value="128.178.145.248"/>
-	<arg  name="ip_address_left"  value="128.178.145.89"/>
+	<arg  name="ip_address_left"  value="128.178.145.248"/>
 	<arg  name="bias"	 	default="False"/>
 	<arg  name="rate" 	 	default="200"/>	
 	<arg  name="frame_id"	default="myframe"/>
@@ -52,6 +52,9 @@
     <!-- <remap from="/ds1/filter/desired_velocity" to="/lwr/joint_controllers/passive_ds_command_vel" /> -->
 
   </group>
+
+
+<include file="$(find joint_carry)/launch/bringup_optitrack.launch"/>
 
 
 

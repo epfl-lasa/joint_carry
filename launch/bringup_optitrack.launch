@@ -1,12 +1,5 @@
-<!-- <?xml version="1.0" ?>
-<launch>
+<?xml version="1.0" ?>
 
-  	<include file="$(find mocap_optitrack)/launch/epfl_optitrack.launch">
-    		<arg name="mocap_config_file"       value="$(find ds_based_contact_tasks)/config/optitrack_surface_polishing.yaml"/>
- 	</include>
-
-</launch>
- -->
  <launch>
   <arg name="server" default="128.178.145.104"/>
 
@@ -14,7 +7,7 @@
     <rosparam subst_value="true">
       server: $(arg server)
       port: 3883
-      frame_id: world
+      frame_id: mocap_world
       broadcast_tf: true
       # Must either specify refresh frequency > 0.0, or a list of trackers to create
       refresh_tracker_frequency: 1.0
@@ -24,9 +17,18 @@
     </rosparam>
   </node>
 
-  # publish the hardcoded grasp points for the kuka endeffector equipped with the qbhand
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args=".3 0 0 0 1.57 0 /guard /grasp_left 100"/>
+  # putting the right lwr in the mocap_world fame
+  # the first frame comes from the mocap markers around the robot's base
+  # the second frame comes from the launch argument:
+  # roslaunch lwr_simple_example real.launch robot_name:=right_lwr robot_world:=right_lwr_base
+  <node pkg="tf" type="static_transform_publisher" name="right_lwr_base" args="0 0 0 0 0 0 /right_lwr_markers /right_lwr_base 100"/>
 
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="-.3 0 0 0 1.57 0 /guard /grasp_right 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.593, 0.156, 0.157 0.881, 0.388, -0.248, -0.110 /guard /grasp_right 100"/>
+
+
+  # publish the hardcoded grasp points for the kuka endeffector equipped with the qbhand
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.593, -0.156, 0.157 0.881, 0.388, -0.248, -0.110 /guard /grasp_left 100"/>
+
+
 
 </launch>
