@@ -1,7 +1,6 @@
 <?xml version="1.0" ?>
 <launch>
 
-
 	<!-- Force torque sensor config -->
 	<arg  name="ip_address_right"  value="128.178.145.248"/>
 	<arg  name="ip_address_left"  value="128.178.145.89"/>
@@ -19,7 +18,6 @@
 	<rosparam command="load" file="$(arg right_hand_setting)"/>
 	<node name="qb_interface_node" pkg="qb_interface" type="qb_interface" args="0" output="screen" />
 
-
 	<param name="frame_id" type="str" value="$(arg frame_id)"/>
 	<node name="force_torque_sensor" pkg="netft_rdt_driver" type="netft_node" 
 		    args="--address $(arg ip_address_right) --rate $(arg rate) --bias $(arg bias) --rot $(arg rot) --alpha $(arg alpha) --scale_x $(arg scale_x) --scale_y $(arg scale_y) --scale_z $(arg scale_z)" 
@@ -27,8 +25,8 @@
 </group>
 
  <group ns="left">
-	<arg name="right_hand_setting" default="$(find joint_carry)/config/right_qb_hand.yaml"/>
-	<rosparam command="load" file="$(arg right_hand_setting)"/>
+	<arg name="left_hand_setting" default="$(find joint_carry)/config/left_qb_hand.yaml"/>
+	<rosparam command="load" file="$(arg left_hand_setting)"/>
 	<node name="qb_interface_node" pkg="qb_interface" type="qb_interface" args="0" output="screen" />
 
 
@@ -39,13 +37,12 @@
 </group>
 
 
-
   <group ns="main_node">
     <param name="topic_name_right_robot_pose" value="/lwr/ee_pose"/>
     <param name="topic_name_left_robot_pose" value="/lwr/ee_pose"/>
 
-    <param name="topic_name_right_hand_command" value="/right_side/qb_interface_node_/qb_class/hand_ref"/>
-    <param name="topic_name_left_hand_command" value="/left_side/qb_interface_node_/qb_class/hand_ref"/>
+    <param name="topic_name_right_hand_command" value="/right/qb_interface_node/qb_class/hand_ref"/>
+    <param name="topic_name_left_hand_command" value="/left/qb_interface_node/qb_class/hand_ref"/>
 
     <param name="output_topic_name" value="/ds1/desired_velocity"/>
 <!--     <rosparam command="load" file="$(find ds_motion_generator)/config/s4_back_GMM.yml"/>

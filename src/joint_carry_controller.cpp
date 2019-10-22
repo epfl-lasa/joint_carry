@@ -81,6 +81,9 @@ void JointCarryController::Run() {
 	right_hand_closure_.closure.clear();
 	right_hand_closure_.closure.push_back(19000.0);
 
+	left_hand_closure_.closure.clear();
+	left_hand_closure_.closure.push_back(19000.0);
+
 
 		loop_rate_.sleep();
 	}
