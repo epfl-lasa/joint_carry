@@ -18,6 +18,18 @@ int main(int argc, char **argv)
   std::string topic_name_right_hand_command;
   std::string topic_name_left_hand_command;
 
+  
+
+  std::string topic_name_right_robot_command_vel;
+  std::string topic_name_left_robot_command_vel;
+
+  std::string topic_name_right_robot_command_orient;
+  std::string topic_name_left_robot_command_orient;
+
+
+  std::string topic_name_right_grasp_pose;
+  std::string topic_name_left_grasp_pose;
+
   std::string output_topic_name;
   
   int K_gmm;
@@ -50,6 +62,37 @@ int main(int argc, char **argv)
     // return -1;
   }
 
+  if (!nh.getParam("topic_name_right_robot_command_vel", topic_name_right_robot_command_vel))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the right robot vel command. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_left_robot_command_vel", topic_name_left_robot_command_vel))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the left robot vel command. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_right_robot_command_orient", topic_name_right_robot_command_orient))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the right robot orient command. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_left_robot_command_orient", topic_name_left_robot_command_orient))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the left robot orient command. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_right_grasp_pose", topic_name_right_grasp_pose))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the right grasp pose. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_left_grasp_pose", topic_name_left_grasp_pose))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the left grasp pose. ");
+    // return -1;
+  }
+
+
 
   // if (!nh.getParam("K", K_gmm))   {
   //   ROS_ERROR("Couldn't retrieve the number of guassians. ");
@@ -70,6 +113,12 @@ int main(int argc, char **argv)
                                               topic_name_left_robot_pose,
                                               topic_name_right_hand_command,
                                               topic_name_left_hand_command,
+                                              topic_name_right_robot_command_vel,
+                                              topic_name_left_robot_command_vel,
+                                              topic_name_right_robot_command_orient,
+                                              topic_name_left_robot_command_orient,
+                                              topic_name_right_grasp_pose,
+                                              topic_name_left_grasp_pose,
                                               output_topic_name);
   if (!joint_carry_controller.Init()) {
     return -1;

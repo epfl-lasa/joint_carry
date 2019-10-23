@@ -13,7 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   qb_interface
   tf
-  tf_conversions
+  # tf_conversions
 )
 
 

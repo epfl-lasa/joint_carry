@@ -10,6 +10,12 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
                                      std::string topic_name_left_robot_pose,
                                      std::string topic_name_right_hand_command,
                                      std::string topic_name_left_hand_command,
+                                     std::string topic_name_right_robot_command_vel,
+				                     std::string topic_name_left_robot_command_vel,
+				                     std::string topic_name_right_robot_command_orient,
+				                     std::string topic_name_left_robot_command_orient,
+				                     std::string topic_name_right_grasp_pose,
+                      				 std::string topic_name_left_grasp_pose,
                                      std::string output_topic_name)
 	: nh_(n),
 	  loop_rate_(frequency),
@@ -17,6 +23,13 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 	  topic_name_left_robot_pose_(topic_name_left_robot_pose),
 	  topic_name_right_hand_command_(topic_name_right_hand_command),
 	  topic_name_left_hand_command_(topic_name_left_hand_command),
+      topic_name_right_robot_command_vel_(topic_name_right_robot_command_vel),
+      topic_name_left_robot_command_vel_(topic_name_left_robot_command_vel),
+      topic_name_right_robot_command_orient_(topic_name_right_robot_command_orient),
+      topic_name_left_robot_command_orient_(topic_name_left_robot_command_orient),
+      topic_name_right_grasp_pose_(topic_name_right_grasp_pose),
+      topic_name_left_grasp_pose_(topic_name_right_grasp_pose),
+
 	  output_topic_name_(output_topic_name),
 	  dt_(1 / frequency)
 	  // scaling_factor_(1),
@@ -28,17 +41,34 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 
 bool JointCarryController::Init() {
 
+
+	// topics to communicate with the two LWRs
 	sub_right_robot_pose_ = nh_.subscribe(topic_name_right_robot_pose_ , 1000,
 	                                &JointCarryController::UpdateRightRobotEEPose, 
 	                                this, ros::TransportHints().reliable().tcpNoDelay());
 	sub_left_robot_pose_ = nh_.subscribe(topic_name_left_robot_pose_ , 1000,
 	                                &JointCarryController::UpdateLeftRobotEEPose, 
 	                                this, ros::TransportHints().reliable().tcpNoDelay());
-	// pub_desired_twist_ = nh_.advertise<geometry_msgs::TwistStamped>(output_topic_name_, 1);
 
+
+	pub_right_robot_command_vel_ = nh_.advertise<geometry_msgs::Twist>(topic_name_right_robot_command_vel_,1);
+	pub_left_robot_command_vel_ = nh_.advertise<geometry_msgs::Twist>(topic_name_left_robot_command_vel_,1);
+
+	pub_right_robot_command_orient_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_right_robot_command_orient_,1);
+	pub_left_robot_command_orient_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_left_robot_command_orient_,1);
+
+
+	// pub_desired_twist_ = nh_.advertise<geometry_msgs::Twist>(output_topic_name_, 1);
+
+
+	// topics to communicate with the two QBhands
 	pub_right_hand_command_ = nh_.advertise<qb_interface::handRef>(topic_name_right_hand_command_,1);
 	pub_left_hand_command_ = nh_.advertise<qb_interface::handRef>(topic_name_left_hand_command_,1);
 
+
+	// topis to communicate with the Dynamical Systems
+	pub_right_grasp_pose_ = nh_.advertise<geometry_msgs::Pose>(topic_name_right_grasp_pose_,1);
+	pub_left_grasp_pose_ = nh_.advertise<geometry_msgs::Pose>(topic_name_left_grasp_pose_,1);
 
 	// float32 closure[1]; 
 	// closure[0] = 19000.0;
@@ -74,8 +104,8 @@ void JointCarryController::Run() {
 
 		ROS_WARN_THROTTLE(1, "Updating the hand commands ....");
 
-		pub_right_hand_command_.publish(right_hand_closure_);
-		pub_left_hand_command_.publish(left_hand_closure_);
+		// pub_right_hand_command_.publish(right_hand_closure_);
+		// pub_left_hand_command_.publish(left_hand_closure_);
 
 
 		// pub_right_hand_command_.publish()
@@ -87,6 +117,7 @@ void JointCarryController::Run() {
 	left_hand_closure_.closure.push_back(19000.0);
 
 
+	update_grasp_tfs();
    UpdateRightRobotTask();
 
 
@@ -130,52 +161,123 @@ void JointCarryController::UpdateRightRobotTask(){
 	
  
 
- get_rotation_matrix(rotation_grasp_right_, tf_listener_,
-                              "right_lwr_base_link", "grasp_right");
 
- ROS_INFO_STREAM_THROTTLE(1, "goal is at:" << rotation_grasp_right_(0,0) << "\t" <<
- 	rotation_grasp_right_(1,0));
+
+ ROS_INFO_STREAM_THROTTLE(1, "the right grasp point is at:" << 
+ 	right_grasp_pose_(0) << "\t" <<
+ 	right_grasp_pose_(1) << "\t" <<
+ 	right_grasp_pose_(2) << "\t" <<
+ 	right_grasp_pose_(3) << "\t" <<
+ 	right_grasp_pose_(4) << "\t" <<
+ 	right_grasp_pose_(5) << "\t" <<
+ 	right_grasp_pose_(6) );
+
+
+  ROS_INFO_STREAM_THROTTLE(1, "the left grasp point is at:" << 
+ 	left_grasp_pose_(0) << "\t" <<
+ 	left_grasp_pose_(1) << "\t" <<
+ 	left_grasp_pose_(2) << "\t" <<
+ 	left_grasp_pose_(3) << "\t" <<
+ 	left_grasp_pose_(4) << "\t" <<
+ 	left_grasp_pose_(5) << "\t" <<
+ 	left_grasp_pose_(6) );
+
+
+
+
+  geometry_msgs::Twist twist_msg;
+  twist_msg.linear.x = 0;
+  twist_msg.linear.y = 0;
+  twist_msg.linear.z = 0;
+  twist_msg.angular.x = 0;
+  twist_msg.angular.y = 0;
+  twist_msg.angular.z = 0;
+
+   pub_right_robot_command_vel_.publish(twist_msg);
+
+
+
+   geometry_msgs::Quaternion quat_msg;
+
+   quat_msg.x = right_grasp_pose_(3);
+   quat_msg.y = right_grasp_pose_(4);
+   quat_msg.z = right_grasp_pose_(5);
+   quat_msg.w = right_grasp_pose_(6);
+
+   pub_right_robot_command_orient_.publish(quat_msg);
+
+
 }
+
+
 
 
 void JointCarryController::wait_for_transformtaions(){
 
-  tf::TransformListener listener;
-  rotation_grasp_right_.setZero();
-  rotation_grasp_left_.setZero();
+  right_grasp_pose_.setZero();
+  right_grasp_pose_(6) = 1; // quat.w = 1
+  left_grasp_pose_.setZero();
+  left_grasp_pose_(6) = 1; // quat.w = 1
 
-  while (!get_rotation_matrix(rotation_grasp_right_, listener,
-                              "right_lwr_base_link", "grasp_right")) {
+  while (!update_grasp_tfs()) {
 	ROS_WARN_STREAM_THROTTLE(1, "Waiting for the TF of the right grasp point: ");
     sleep(1);
   }
 
-    while (!get_rotation_matrix(rotation_grasp_left_, listener,
-                              "right_lwr_base_link", "grasp_left")) {
-	ROS_WARN_STREAM_THROTTLE(1, "Waiting for the TF of the left grasp point: ");
-    sleep(1);
-  }
-
-}
+ }
 
 
-bool JointCarryController::get_rotation_matrix(Matrix6d & rotation_matrix,
-    tf::TransformListener & listener,
-    std::string from_frame,
-    std::string to_frame) {
+
+
+bool JointCarryController::update_grasp_tfs()
+{
   tf::StampedTransform transform;
-  Matrix3d rotation_from_to;
+
   try {
-    listener.lookupTransform(from_frame, to_frame,
+    tf_listener_.lookupTransform("right_lwr_base_link", "right_grasp",
                              ros::Time(0), transform);
-    tf::matrixTFToEigen(transform.getBasis(), rotation_from_to);
-    rotation_matrix.setZero();
-    rotation_matrix.topLeftCorner(3, 3) = rotation_from_to;
-    rotation_matrix.bottomRightCorner(3, 3) = rotation_from_to;
+      right_grasp_pose_(0) = transform.getOrigin().x();
+      right_grasp_pose_(1) = transform.getOrigin().y();
+      right_grasp_pose_(2) = transform.getOrigin().z();
+      right_grasp_pose_(3) = transform.getRotation().x();
+      right_grasp_pose_(4) = transform.getRotation().y();
+      right_grasp_pose_(5) = transform.getRotation().z();
+      right_grasp_pose_(6) = transform.getRotation().w();
+
+      geometry_msgs::Pose pose_msg;
+
+      pose_msg.position.x = right_grasp_pose_(0);
+      pose_msg.position.y = right_grasp_pose_(1);
+      pose_msg.position.z = right_grasp_pose_(2);
+
+      pose_msg.orientation.x = right_grasp_pose_(3);
+      pose_msg.orientation.y = right_grasp_pose_(4);
+      pose_msg.orientation.z = right_grasp_pose_(5);
+      pose_msg.orientation.w = right_grasp_pose_(6);
+
+      pub_right_grasp_pose_.publish(pose_msg);
+
+
+
   }
   catch (tf::TransformException ex) {
-    rotation_matrix.setZero();
-    ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF from: " << from_frame << " to: " << to_frame );
+    ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: /right_grasp" );
+    return false;
+  }
+
+  try {
+    tf_listener_.lookupTransform("right_lwr_base_link", "left_grasp",
+                             ros::Time(0), transform);
+      left_grasp_pose_(0) = transform.getOrigin().x();
+      left_grasp_pose_(1) = transform.getOrigin().y();
+      left_grasp_pose_(2) = transform.getOrigin().z();
+      left_grasp_pose_(3) = transform.getRotation().x();
+      left_grasp_pose_(4) = transform.getRotation().y();
+      left_grasp_pose_(5) = transform.getRotation().z();
+      left_grasp_pose_(6) = transform.getRotation().w();
+  }
+  catch (tf::TransformException ex) {
+    ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: /left_grasp" );
     return false;
   }
 

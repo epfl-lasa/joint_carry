@@ -23,11 +23,12 @@
   # roslaunch lwr_simple_example real.launch robot_name:=right_lwr robot_world:=right_lwr_base
   <node pkg="tf" type="static_transform_publisher" name="right_lwr_base" args="0 0 0 0 0 0 /right_lwr_markers /right_lwr_base 100"/>
 
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.593, 0.156, 0.157 0.881, 0.388, -0.248, -0.110 /guard /grasp_right 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.624, 0.157, 0.130 0.725, -0.596, -0.219, 0.268 /guard /right_grasp 100"/>
+
 
 
   # publish the hardcoded grasp points for the kuka endeffector equipped with the qbhand
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.593, -0.156, 0.157 0.881, 0.388, -0.248, -0.110 /guard /grasp_left 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.593, -0.156, 0.157 0.881, 0.388, -0.248, -0.110 /guard /left_grasp 100"/>
 
 
 
