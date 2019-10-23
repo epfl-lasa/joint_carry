@@ -87,7 +87,10 @@ private:
 	ros::Publisher pub_left_robot_command_orient_ ;
 
 	ros::Publisher pub_right_grasp_pose_;		
-	ros::Publisher pub_left_grasp_pose_;	
+	ros::Publisher pub_left_grasp_pose_;
+
+	ros::Subscriber sub_right_ds_vel_;
+	ros::Subscriber sub_left_ds_vel_;	
 
 	// ros::Publisher pub_desired_twist_;
 	// ros::Publisher pub_desired_twist_filtered_;
@@ -102,11 +105,13 @@ private:
 	std::string topic_name_left_robot_command_vel_;
 	std::string topic_name_right_robot_command_orient_;
 	std::string topic_name_left_robot_command_orient_;
+	std::string topic_name_right_ds_vel_;
+	std::string topic_name_left_ds_vel_;	
+	
 
   	std::string topic_name_right_grasp_pose_;
   	std::string topic_name_left_grasp_pose_;
 
-	std::string output_topic_name_;
 
 	// geometry_msgs::Pose msg_real_pose_;
 	// geometry_msgs::TwistStamped msg_desired_velocity_;
@@ -140,6 +145,10 @@ tf::TransformListener tf_listener_;
   Vector7d left_grasp_pose_;
 
 
+  Vector3d right_ds_vel_;
+  Vector3d left_ds_vel_;
+
+
 
 public:
 	JointCarryController(ros::NodeHandle &n,
@@ -154,7 +163,8 @@ public:
                       std::string topic_name_left_robot_command_orient,
                       std::string topic_name_right_grasp_pose,
                       std::string topic_name_left_grasp_pose,
-	                  std::string output_topic_name);
+                      std::string topic_name_right_ds_vel,
+					  std::string topic_name_left_ds_vel);
 
 	bool Init();
 
@@ -173,6 +183,10 @@ private:
 
 	void wait_for_transformtaions();
 	bool update_grasp_tfs();
+
+
+	void UpdateRightDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
+	void UpdateLeftDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
 
 
 

@@ -16,7 +16,8 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 				                     std::string topic_name_left_robot_command_orient,
 				                     std::string topic_name_right_grasp_pose,
                       				 std::string topic_name_left_grasp_pose,
-                                     std::string output_topic_name)
+                      				 std::string topic_name_right_ds_vel,
+                      				 std::string topic_name_left_ds_vel)
 	: nh_(n),
 	  loop_rate_(frequency),
 	  topic_name_right_robot_pose_(topic_name_right_robot_pose),
@@ -28,9 +29,9 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
       topic_name_right_robot_command_orient_(topic_name_right_robot_command_orient),
       topic_name_left_robot_command_orient_(topic_name_left_robot_command_orient),
       topic_name_right_grasp_pose_(topic_name_right_grasp_pose),
-      topic_name_left_grasp_pose_(topic_name_right_grasp_pose),
-
-	  output_topic_name_(output_topic_name),
+      topic_name_left_grasp_pose_(topic_name_left_grasp_pose),
+      topic_name_right_ds_vel_(topic_name_right_ds_vel),
+	  topic_name_left_ds_vel_(topic_name_left_ds_vel),
 	  dt_(1 / frequency)
 	  // scaling_factor_(1),
 	   {
@@ -49,6 +50,8 @@ bool JointCarryController::Init() {
 	sub_left_robot_pose_ = nh_.subscribe(topic_name_left_robot_pose_ , 1000,
 	                                &JointCarryController::UpdateLeftRobotEEPose, 
 	                                this, ros::TransportHints().reliable().tcpNoDelay());
+
+
 
 
 	pub_right_robot_command_vel_ = nh_.advertise<geometry_msgs::Twist>(topic_name_right_robot_command_vel_,1);
@@ -70,6 +73,14 @@ bool JointCarryController::Init() {
 	pub_right_grasp_pose_ = nh_.advertise<geometry_msgs::Pose>(topic_name_right_grasp_pose_,1);
 	pub_left_grasp_pose_ = nh_.advertise<geometry_msgs::Pose>(topic_name_left_grasp_pose_,1);
 
+	sub_right_ds_vel_ = nh_.subscribe(topic_name_right_ds_vel_, 1000, 
+								&JointCarryController::UpdateRightDSVelocity,
+								this, ros::TransportHints().reliable().tcpNoDelay());
+
+	sub_left_ds_vel_ = nh_.subscribe(topic_name_left_ds_vel_, 1000, 
+							&JointCarryController::UpdateLeftDSVelocity,
+							this, ros::TransportHints().reliable().tcpNoDelay());
+
 	// float32 closure[1]; 
 	// closure[0] = 19000.0;
 
@@ -79,8 +90,27 @@ bool JointCarryController::Init() {
 	left_hand_closure_.closure.clear();
 	left_hand_closure_.closure.push_back(0.0);
 
+
+
+
+	right_ds_vel_.setZero();
+	left_ds_vel_.setZero();
+
+
 	if (nh_.ok()) { // Wait for poses being published
 		ros::spinOnce();
+
+		ROS_INFO_STREAM("Waiting 3 second for QBhands nodes");
+		ros::Duration(3).sleep();
+		pub_right_hand_command_.publish(right_hand_closure_);
+		pub_left_hand_command_.publish(left_hand_closure_);
+		ros::spinOnce();
+		ros::Duration(1).sleep();
+
+		wait_for_transformtaions();
+
+
+
 		ROS_INFO("The controller is initialized.");
 		return true;
 	}
@@ -89,7 +119,10 @@ bool JointCarryController::Init() {
 		return false;
 	}
 
-	wait_for_transformtaions();
+
+
+
+
 
 }
 
@@ -104,23 +137,21 @@ void JointCarryController::Run() {
 
 		ROS_WARN_THROTTLE(1, "Updating the hand commands ....");
 
-		// pub_right_hand_command_.publish(right_hand_closure_);
-		// pub_left_hand_command_.publish(left_hand_closure_);
 
 
-		// pub_right_hand_command_.publish()
 
-	right_hand_closure_.closure.clear();
-	right_hand_closure_.closure.push_back(19000.0);
+	// right_hand_closure_.closure.clear();
+	// right_hand_closure_.closure.push_back(19000.0);
 
-	left_hand_closure_.closure.clear();
-	left_hand_closure_.closure.push_back(19000.0);
+	// left_hand_closure_.closure.clear();
+	// left_hand_closure_.closure.push_back(19000.0);
 
 
 	update_grasp_tfs();
    UpdateRightRobotTask();
 
 
+   		ros::spinOnce();
 		loop_rate_.sleep();
 	}
 }
@@ -185,10 +216,12 @@ void JointCarryController::UpdateRightRobotTask(){
 
 
 
+  	// sending the DS vels to the robot
+
   geometry_msgs::Twist twist_msg;
-  twist_msg.linear.x = 0;
-  twist_msg.linear.y = 0;
-  twist_msg.linear.z = 0;
+  twist_msg.linear.x = right_ds_vel_(0);
+  twist_msg.linear.y = right_ds_vel_(1);
+  twist_msg.linear.z = right_ds_vel_(2);
   twist_msg.angular.x = 0;
   twist_msg.angular.y = 0;
   twist_msg.angular.z = 0;
@@ -205,6 +238,14 @@ void JointCarryController::UpdateRightRobotTask(){
    quat_msg.w = right_grasp_pose_(6);
 
    pub_right_robot_command_orient_.publish(quat_msg);
+
+
+   if( (right_robot_position_ - right_grasp_pose_.head(3)).norm() < 0.05 && right_hand_closure_.closure[0] == 0 ){
+   		right_hand_closure_.closure.clear();
+	right_hand_closure_.closure.push_back(19000.0);
+	pub_right_hand_command_.publish(right_hand_closure_);
+
+   }
 
 
 }
@@ -257,8 +298,6 @@ bool JointCarryController::update_grasp_tfs()
 
       pub_right_grasp_pose_.publish(pose_msg);
 
-
-
   }
   catch (tf::TransformException ex) {
     ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: /right_grasp" );
@@ -275,6 +314,22 @@ bool JointCarryController::update_grasp_tfs()
       left_grasp_pose_(4) = transform.getRotation().y();
       left_grasp_pose_(5) = transform.getRotation().z();
       left_grasp_pose_(6) = transform.getRotation().w();
+
+      geometry_msgs::Pose pose_msg;
+
+      pose_msg.position.x = left_grasp_pose_(0);
+      pose_msg.position.y = left_grasp_pose_(1);
+      pose_msg.position.z = left_grasp_pose_(2);
+
+      pose_msg.orientation.x = left_grasp_pose_(3);
+      pose_msg.orientation.y = left_grasp_pose_(4);
+      pose_msg.orientation.z = left_grasp_pose_(5);
+      pose_msg.orientation.w = left_grasp_pose_(6);
+
+      pub_left_grasp_pose_.publish(pose_msg);
+
+
+
   }
   catch (tf::TransformException ex) {
     ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: /left_grasp" );
@@ -282,4 +337,32 @@ bool JointCarryController::update_grasp_tfs()
   }
 
   return true;
+}
+
+
+
+void JointCarryController::UpdateRightDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg){
+
+	right_ds_vel_(0) = msg->twist.linear.x;
+	right_ds_vel_(1) = msg->twist.linear.y;
+	right_ds_vel_(2) = msg->twist.linear.z;
+
+	ROS_INFO_STREAM_THROTTLE(1, "Recieved vel from right ds: " << 
+		right_ds_vel_(0) << "\t" << 
+		right_ds_vel_(1) << "\t" << 
+		right_ds_vel_(2) );
+
+}
+
+void JointCarryController::UpdateLeftDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg){
+
+    left_ds_vel_(0) = msg->twist.linear.x;
+	left_ds_vel_(1) = msg->twist.linear.y;
+	left_ds_vel_(2) = msg->twist.linear.z;
+
+	ROS_INFO_STREAM_THROTTLE(1, "Recieved vel from right ds: " << 
+		left_ds_vel_(0) << "\t" << 
+		left_ds_vel_(1) << "\t" << 
+		left_ds_vel_(2) );
+
 }

@@ -30,10 +30,10 @@ int main(int argc, char **argv)
   std::string topic_name_right_grasp_pose;
   std::string topic_name_left_grasp_pose;
 
-  std::string output_topic_name;
+
+  std::string topic_name_right_ds_vel;
+  std::string topic_name_left_ds_vel;
   
-  int K_gmm;
-  std::vector<double> Priors;
  
 
 
@@ -54,11 +54,6 @@ int main(int argc, char **argv)
 
   if (!nh.getParam("topic_name_left_hand_command", topic_name_left_hand_command))   {
     ROS_ERROR("Couldn't retrieve the topic name for the left hand command. ");
-    // return -1;
-  }
-
-  if (!nh.getParam("output_topic_name", output_topic_name))   {
-    ROS_ERROR("Couldn't retrieve the topic name for the output. ");
     // return -1;
   }
 
@@ -92,6 +87,16 @@ int main(int argc, char **argv)
     // return -1;
   }
 
+  if (!nh.getParam("topic_name_right_ds_vel", topic_name_right_ds_vel))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the right ds velocity. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_left_ds_vel", topic_name_left_ds_vel))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the left ds velocity. ");
+    // return -1;
+  }
+
 
 
   // if (!nh.getParam("K", K_gmm))   {
@@ -119,7 +124,8 @@ int main(int argc, char **argv)
                                               topic_name_left_robot_command_orient,
                                               topic_name_right_grasp_pose,
                                               topic_name_left_grasp_pose,
-                                              output_topic_name);
+                                              topic_name_right_ds_vel,
+                                              topic_name_left_ds_vel);
   if (!joint_carry_controller.Init()) {
     return -1;
   }

@@ -26,9 +26,9 @@
 
 	<param name="input_topic_name" value="/right_lwr/ee_pose"/>
     <param name="target_topic_name" value="/main_node/right_grasp_pose"/>
-    <param name="output_topic_name" value="/right_ds/desired_velocity"/>
-    <param name="output_filtered_topic_name" value="/right_ds/filtered_desired_velocity"/>
-    <rosparam command="load" file="$(find ds_motion_generator)/config/simple_ds.yml"/>
+    <param name="output_topic_name" value="/right/ds_desired_velocity"/>
+    <param name="output_filtered_topic_name" value="/right/ds_filtered_desired_velocity"/>
+    <rosparam command="load" file="$(find joint_carry)/config/simple_ds.yaml"/>
     <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
 
 </group>
@@ -47,9 +47,9 @@
 
 	<param name="input_topic_name" value="/left_lwr/ee_pose"/>
     <param name="target_topic_name" value="/main_node/left_grasp_pose"/>
-    <param name="output_topic_name" value="/left_ds/desired_velocity"/>
-    <param name="output_filtered_topic_name" value="/left_ds/filtered_desired_velocity"/>
-    <rosparam command="load" file="$(find ds_motion_generator)/config/simple_ds.yml"/>
+    <param name="output_topic_name" value="/left/ds_desired_velocity"/>
+    <param name="output_filtered_topic_name" value="/left/ds_filtered_desired_velocity"/>
+    <rosparam command="load" file="$(find joint_carry)/config/simple_ds.yaml"/>
     <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
 
 </group>
@@ -72,7 +72,10 @@
     <param name="topic_name_right_robot_command_orient" value="/right_lwr/joint_controllers/passive_ds_command_orient"/>
     <param name="topic_name_left_robot_command_orient" value="/left_lwr/joint_controllers/passive_ds_command_orient"/>
 
-    <param name="output_topic_name" value="/ds1/desired_velocity"/>
+    <param name="topic_name_right_ds_vel" value="/right/ds_desired_velocity"/>
+    <param name="topic_name_left_ds_vel" value="/left/ds_desired_velocity"/>
+
+
 <!--     <rosparam command="load" file="$(find ds_motion_generator)/config/s4_back_GMM.yml"/>
  -->    <node name="controller_node" pkg="joint_carry" type="joint_carry_node" output="screen"/>
 
