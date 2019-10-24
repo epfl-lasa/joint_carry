@@ -97,6 +97,10 @@ bool JointCarryController::Init() {
 	left_ds_vel_.setZero();
 
 
+	right_robot_orientation_.setIdentity();
+	left_robot_orientation_.setIdentity();
+
+
 	if (nh_.ok()) { // Wait for poses being published
 		ros::spinOnce();
 
@@ -147,8 +151,8 @@ void JointCarryController::Run() {
 	// left_hand_closure_.closure.push_back(19000.0);
 
 
-	update_grasp_tfs();
-   UpdateRightRobotTask();
+		update_grasp_tfs();
+   		UpdateRightRobotTask();
 
 
    		ros::spinOnce();
@@ -158,32 +162,31 @@ void JointCarryController::Run() {
 
 void JointCarryController::UpdateRightRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg) {
 
-	// msg_real_pose_ = *msg;
-
 	right_robot_position_(0) = msg->position.x;
 	right_robot_position_(1) = msg->position.y;
 	right_robot_position_(2) = msg->position.z;
 
-	// double qtx = msg_real_pose_.orientation.x;
-	// double qty = msg_real_pose_.orientation.y;
-	// double qtz = msg_real_pose_.orientation.z;
-	// double qtw = msg_real_pose_.orientation.w;
+	right_robot_orientation_.x() = msg->orientation.x;
+	right_robot_orientation_.y() = msg->orientation.y;
+	right_robot_orientation_.z() = msg->orientation.z;
+	right_robot_orientation_.w() = msg->orientation.w;
+	right_robot_orientation_.normalize();
+
 
 }
 
 
 void JointCarryController::UpdateLeftRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg) {
 
-	// msg_real_pose_ = *msg;
-
 	left_robot_position_(0) = msg->position.x;
 	left_robot_position_(1) = msg->position.y;
 	left_robot_position_(2) = msg->position.z;
 
-	// double qtx = msg_real_pose_.orientation.x;
-	// double qty = msg_real_pose_.orientation.y;
-	// double qtz = msg_real_pose_.orientation.z;
-	// double qtw = msg_real_pose_.orientation.w;
+	left_robot_orientation_.x() = msg->orientation.x;
+	left_robot_orientation_.y() = msg->orientation.y;
+	left_robot_orientation_.z() = msg->orientation.z;
+	left_robot_orientation_.w() = msg->orientation.w;
+	left_robot_orientation_.normalize();
 
 }
 
@@ -194,24 +197,24 @@ void JointCarryController::UpdateRightRobotTask(){
 
 
 
- ROS_INFO_STREAM_THROTTLE(1, "the right grasp point is at:" << 
- 	right_grasp_pose_(0) << "\t" <<
- 	right_grasp_pose_(1) << "\t" <<
- 	right_grasp_pose_(2) << "\t" <<
- 	right_grasp_pose_(3) << "\t" <<
- 	right_grasp_pose_(4) << "\t" <<
- 	right_grasp_pose_(5) << "\t" <<
- 	right_grasp_pose_(6) );
+ // ROS_INFO_STREAM_THROTTLE(1, "the right grasp point is at:" << 
+ // 	right_grasp_pose_(0) << "\t" <<
+ // 	right_grasp_pose_(1) << "\t" <<
+ // 	right_grasp_pose_(2) << "\t" <<
+ // 	right_grasp_pose_(3) << "\t" <<
+ // 	right_grasp_pose_(4) << "\t" <<
+ // 	right_grasp_pose_(5) << "\t" <<
+ // 	right_grasp_pose_(6) );
 
 
-  ROS_INFO_STREAM_THROTTLE(1, "the left grasp point is at:" << 
- 	left_grasp_pose_(0) << "\t" <<
- 	left_grasp_pose_(1) << "\t" <<
- 	left_grasp_pose_(2) << "\t" <<
- 	left_grasp_pose_(3) << "\t" <<
- 	left_grasp_pose_(4) << "\t" <<
- 	left_grasp_pose_(5) << "\t" <<
- 	left_grasp_pose_(6) );
+  // ROS_INFO_STREAM_THROTTLE(1, "the left grasp point is at:" << 
+ 	// left_grasp_pose_(0) << "\t" <<
+ 	// left_grasp_pose_(1) << "\t" <<
+ 	// left_grasp_pose_(2) << "\t" <<
+ 	// left_grasp_pose_(3) << "\t" <<
+ 	// left_grasp_pose_(4) << "\t" <<
+ 	// left_grasp_pose_(5) << "\t" <<
+ 	// left_grasp_pose_(6) );
 
 
 
@@ -230,17 +233,41 @@ void JointCarryController::UpdateRightRobotTask(){
 
 
 
+ // commanding the clamped quaternion
+
+   Eigen::Quaterniond qd;
+   qd.coeffs() << right_grasp_pose_.bottomRows(4) / right_grasp_pose_.bottomRows(4).norm();
+   Eigen::Quaterniond q_diff = qd * right_robot_orientation_.inverse();
+   Eigen::AngleAxisd diff_axang(q_diff);
+
+   diff_axang.angle() = (diff_axang.angle() > 0.2) ?  0.2 : diff_axang.angle();
+   diff_axang.angle() = (diff_axang.angle() < -0.2) ? -0.2 : diff_axang.angle();
+
+   Eigen::Quaterniond diff_clamped(diff_axang);
+
+   qd = diff_clamped * right_robot_orientation_;
+
+
+
    geometry_msgs::Quaternion quat_msg;
 
-   quat_msg.x = right_grasp_pose_(3);
-   quat_msg.y = right_grasp_pose_(4);
-   quat_msg.z = right_grasp_pose_(5);
-   quat_msg.w = right_grasp_pose_(6);
+   quat_msg.x = qd.x();
+   quat_msg.y = qd.y();
+   quat_msg.z = qd.z();
+   quat_msg.w = qd.w();
+
+   // quat_msg.x = right_grasp_pose_(3);
+   // quat_msg.y = right_grasp_pose_(4);
+   // quat_msg.z = right_grasp_pose_(5);
+   // quat_msg.w = right_grasp_pose_(6);
 
    pub_right_robot_command_orient_.publish(quat_msg);
 
 
-   if( (right_robot_position_ - right_grasp_pose_.head(3)).norm() < 0.05 && right_hand_closure_.closure[0] == 0 ){
+    ROS_INFO_STREAM_THROTTLE(1, "Distance to grasp point" << (right_robot_position_ - right_grasp_pose_.head(3)).norm());
+
+
+   if( (right_robot_position_ - right_grasp_pose_.head(3)).norm() < 0.02 && right_hand_closure_.closure[0] == 0 ){
    		right_hand_closure_.closure.clear();
 	right_hand_closure_.closure.push_back(19000.0);
 	pub_right_hand_command_.publish(right_hand_closure_);
@@ -261,7 +288,7 @@ void JointCarryController::wait_for_transformtaions(){
   left_grasp_pose_(6) = 1; // quat.w = 1
 
   while (!update_grasp_tfs()) {
-	ROS_WARN_STREAM_THROTTLE(1, "Waiting for the TF of the right grasp point: ");
+	ROS_WARN_STREAM_THROTTLE(1, "Waiting for the TFs");
     sleep(1);
   }
 
@@ -347,10 +374,10 @@ void JointCarryController::UpdateRightDSVelocity(const geometry_msgs::TwistStamp
 	right_ds_vel_(1) = msg->twist.linear.y;
 	right_ds_vel_(2) = msg->twist.linear.z;
 
-	ROS_INFO_STREAM_THROTTLE(1, "Recieved vel from right ds: " << 
-		right_ds_vel_(0) << "\t" << 
-		right_ds_vel_(1) << "\t" << 
-		right_ds_vel_(2) );
+	// ROS_INFO_STREAM_THROTTLE(1, "Recieved vel from right ds: " << 
+	// 	right_ds_vel_(0) << "\t" << 
+	// 	right_ds_vel_(1) << "\t" << 
+	// 	right_ds_vel_(2) );
 
 }
 
@@ -360,9 +387,9 @@ void JointCarryController::UpdateLeftDSVelocity(const geometry_msgs::TwistStampe
 	left_ds_vel_(1) = msg->twist.linear.y;
 	left_ds_vel_(2) = msg->twist.linear.z;
 
-	ROS_INFO_STREAM_THROTTLE(1, "Recieved vel from right ds: " << 
-		left_ds_vel_(0) << "\t" << 
-		left_ds_vel_(1) << "\t" << 
-		left_ds_vel_(2) );
+	// ROS_INFO_STREAM_THROTTLE(1, "Recieved vel from right ds: " << 
+	// 	left_ds_vel_(0) << "\t" << 
+	// 	left_ds_vel_(1) << "\t" << 
+	// 	left_ds_vel_(2) );
 
 }

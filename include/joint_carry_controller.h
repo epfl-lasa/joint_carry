@@ -30,8 +30,8 @@
 // #include <Eigen/Dense>
 // #include <Eigen3/Eigen/Dense>
 
-// #include "eigen3/Eigen/Core"
-// #include "eigen3/Eigen/Geometry"
+#include "eigen3/Eigen/Core"
+#include "eigen3/Eigen/Geometry"
 #include "eigen3/Eigen/Dense"
 
 using namespace Eigen;
@@ -113,6 +113,8 @@ private:
   	std::string topic_name_left_grasp_pose_;
 
 
+
+
 	// geometry_msgs::Pose msg_real_pose_;
 	// geometry_msgs::TwistStamped msg_desired_velocity_;
 	// geometry_msgs::TwistStamped msg_desired_velocity_filtered_;
@@ -126,6 +128,10 @@ private:
 
 	Vector3d right_robot_position_;
 	Vector3d left_robot_position_;
+
+	Quaterniond right_robot_orientation_;
+  	Quaterniond left_robot_orientation_;
+
 	// MathLib::Vector real_pose_;
 	// MathLib::Vector target_pose_;
 	// MathLib::Vector target_offset_;
