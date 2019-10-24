@@ -185,10 +185,12 @@ private:
 
 
 	void UpdateRightRobotTask();
+	void UpdateLeftRobotTask();
 
 
 	void wait_for_transformtaions();
-	bool update_grasp_tfs();
+	bool update_right_grasp_point();
+	bool update_left_grasp_point();
 
 
 	void UpdateRightDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);

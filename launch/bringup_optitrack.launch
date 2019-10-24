@@ -31,8 +31,16 @@
   # extracted by running rosrun tf tf_echo guard right_lwr_7_link
   <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.631, 0.211, 0.145 0.707, -0.615, -0.234, 0.261 /guard /right_grasp 100"/>
 
+  # extracted by running rosrun tf tf_echo guard left_lwr_7_link
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.630, -0.299, 0.180 -0.658, 0.679, 0.254, -0.205 /guard /left_grasp 100"/>
 
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.593, -0.156, 0.157 0.881, 0.388, -0.248, -0.110 /guard /left_grasp 100"/>
+  "$(find lwr_simple_example)/launch/rviz/rviz_config.rviz"
+
+
+  <arg name="rviz_config" default="$(find joint_carry)/config/rviz_config.rviz"/>
+    <node pkg="rviz" type="rviz" name="joint_carry_rviz"  respawn="false" args="-d $(arg rviz_config)" output="screen"/>
+
+
 
 
 

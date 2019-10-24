@@ -151,9 +151,11 @@ void JointCarryController::Run() {
 	// left_hand_closure_.closure.push_back(19000.0);
 
 
-		update_grasp_tfs();
-   		UpdateRightRobotTask();
+		update_right_grasp_point();
+		update_left_grasp_point();
 
+   		UpdateRightRobotTask();
+   		UpdateLeftRobotTask();
 
    		ros::spinOnce();
 		loop_rate_.sleep();
@@ -264,13 +266,66 @@ void JointCarryController::UpdateRightRobotTask(){
    pub_right_robot_command_orient_.publish(quat_msg);
 
 
-    ROS_INFO_STREAM_THROTTLE(1, "Distance to grasp point" << (right_robot_position_ - right_grasp_pose_.head(3)).norm());
+    ROS_INFO_STREAM_THROTTLE(1, "Distance to right grasp point" << (right_robot_position_ - right_grasp_pose_.head(3)).norm());
 
 
-   if( (right_robot_position_ - right_grasp_pose_.head(3)).norm() < 0.02 && right_hand_closure_.closure[0] == 0 ){
+   if( (right_robot_position_ - right_grasp_pose_.head(3)).norm() < 0.03 && right_hand_closure_.closure[0] == 0 ){
    		right_hand_closure_.closure.clear();
 	right_hand_closure_.closure.push_back(19000.0);
 	pub_right_hand_command_.publish(right_hand_closure_);
+
+   }
+
+
+}
+
+
+
+void JointCarryController::UpdateLeftRobotTask(){
+
+  // sending the DS vels to the robot
+
+  geometry_msgs::Twist twist_msg;
+  twist_msg.linear.x = left_ds_vel_(0);
+  twist_msg.linear.y = left_ds_vel_(1);
+  twist_msg.linear.z = left_ds_vel_(2);
+  twist_msg.angular.x = 0;
+  twist_msg.angular.y = 0;
+  twist_msg.angular.z = 0;
+  pub_left_robot_command_vel_.publish(twist_msg);
+
+
+
+ // commanding the clamped quaternion
+
+   Eigen::Quaterniond qd;
+   qd.coeffs() << left_grasp_pose_.bottomRows(4) / left_grasp_pose_.bottomRows(4).norm();
+   Eigen::Quaterniond q_diff = qd * left_robot_orientation_.inverse();
+   Eigen::AngleAxisd diff_axang(q_diff);
+
+   diff_axang.angle() = (diff_axang.angle() > 0.2) ?  0.2 : diff_axang.angle();
+   diff_axang.angle() = (diff_axang.angle() < -0.2) ? -0.2 : diff_axang.angle();
+
+   Eigen::Quaterniond diff_clamped(diff_axang);
+   qd = diff_clamped * left_robot_orientation_;
+
+
+   geometry_msgs::Quaternion quat_msg;
+
+   quat_msg.x = qd.x();
+   quat_msg.y = qd.y();
+   quat_msg.z = qd.z();
+   quat_msg.w = qd.w();
+
+
+   pub_left_robot_command_orient_.publish(quat_msg);
+
+   ROS_INFO_STREAM_THROTTLE(1, "Distance to left grasp point" << (left_robot_position_ - left_grasp_pose_.head(3)).norm());
+
+   if( (left_robot_position_ - left_grasp_pose_.head(3)).norm() < 0.03 && left_hand_closure_.closure[0] == 0 ){
+   		left_hand_closure_.closure.clear();
+	left_hand_closure_.closure.push_back(19000.0);
+	pub_left_hand_command_.publish(left_hand_closure_);
 
    }
 
@@ -287,7 +342,7 @@ void JointCarryController::wait_for_transformtaions(){
   left_grasp_pose_.setZero();
   left_grasp_pose_(6) = 1; // quat.w = 1
 
-  while (!update_grasp_tfs()) {
+  while (!update_right_grasp_point() || !update_left_grasp_point()) {
 	ROS_WARN_STREAM_THROTTLE(1, "Waiting for the TFs");
     sleep(1);
   }
@@ -297,7 +352,7 @@ void JointCarryController::wait_for_transformtaions(){
 
 
 
-bool JointCarryController::update_grasp_tfs()
+bool JointCarryController::update_right_grasp_point()
 {
   tf::StampedTransform transform;
 
@@ -331,8 +386,16 @@ bool JointCarryController::update_grasp_tfs()
     return false;
   }
 
+    return true;
+
+}
+
+bool JointCarryController::update_left_grasp_point()
+{
+	tf::StampedTransform transform;
+
   try {
-    tf_listener_.lookupTransform("right_lwr_base_link", "left_grasp",
+    tf_listener_.lookupTransform("left_lwr_base_link", "left_grasp",
                              ros::Time(0), transform);
       left_grasp_pose_(0) = transform.getOrigin().x();
       left_grasp_pose_(1) = transform.getOrigin().y();
