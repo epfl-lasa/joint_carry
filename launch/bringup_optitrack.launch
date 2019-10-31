@@ -29,7 +29,8 @@
 
   # publish the hardcoded grasp points for the kuka endeffector equipped with the qbhand
   # extracted by running rosrun tf tf_echo guard right_lwr_7_link
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.631, 0.211, 0.145 0.707, -0.615, -0.234, 0.261 /guard /right_grasp 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.584, 0.200, 0.182 
+    0.685, -0.697, -0.144, 0.15 /guard /right_grasp 100"/>
 
   # extracted by running rosrun tf tf_echo guard left_lwr_7_link
   <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.630, -0.299, 0.180 -0.658, 0.679, 0.254, -0.205 /guard /left_grasp 100"/>

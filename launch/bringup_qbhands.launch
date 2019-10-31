@@ -1,0 +1,26 @@
+<?xml version="1.0" ?>
+<launch>
+
+
+
+ <group ns="right">
+	<arg name="right_hand_setting" default="$(find joint_carry)/config/right_qb_hand.yaml"/>
+	<rosparam command="load" file="$(arg right_hand_setting)"/>
+	<node name="qb_interface_node" pkg="qb_interface" type="qb_interface" args="0" output="screen" />
+
+</group>
+
+ <group ns="left">
+	<arg name="left_hand_setting" default="$(find joint_carry)/config/left_qb_hand.yaml"/>
+	<rosparam command="load" file="$(arg left_hand_setting)"/>
+	<node name="qb_interface_node" pkg="qb_interface" type="qb_interface" args="0" output="screen" />
+
+</group>
+
+
+
+
+
+
+
+</launch>

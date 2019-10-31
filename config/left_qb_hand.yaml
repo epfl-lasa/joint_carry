@@ -1,4 +1,4 @@
-port: '/dev/ttyUSB0' # communication port
+port: '/dev/ttyUSB1' # communication port
 eq_preset: true # [Equilibrium/Preset] -> True , [P1/P2/PL] -> False
 hand_perc: false # [Hand command in percentual] -> True , [Hand command in TICK] -> False
 current: false # [Activate current reader] -> True, [Deactivate current reader] -> False

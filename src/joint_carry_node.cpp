@@ -33,6 +33,10 @@ int main(int argc, char **argv)
 
   std::string topic_name_right_ds_vel;
   std::string topic_name_left_ds_vel;
+
+  double hand_max_closure;
+  double hand_grasp_trigger_dist;
+  double hand_grasp_complete_dist;
   
  
 
@@ -98,6 +102,21 @@ int main(int argc, char **argv)
   }
 
 
+  if (!nh.getParam("hand_max_closure", hand_max_closure))   {
+    ROS_ERROR("Couldn't retrieve the maximum closure for the QBhand. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("hand_grasp_trigger_dist", hand_grasp_trigger_dist))   {
+    ROS_ERROR("Couldn't retrieve the trigger distance for the QBhand. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("hand_grasp_complete_dist", hand_grasp_complete_dist))   {
+    ROS_ERROR("Couldn't retrieve the compelete grasp distance for the QBhand. ");
+    // return -1;
+  }
+
 
   // if (!nh.getParam("K", K_gmm))   {
   //   ROS_ERROR("Couldn't retrieve the number of guassians. ");
@@ -125,7 +144,10 @@ int main(int argc, char **argv)
                                               topic_name_right_grasp_pose,
                                               topic_name_left_grasp_pose,
                                               topic_name_right_ds_vel,
-                                              topic_name_left_ds_vel);
+                                              topic_name_left_ds_vel,
+                                              hand_max_closure,
+                                              hand_grasp_trigger_dist,
+                                              hand_grasp_complete_dist);
   if (!joint_carry_controller.Init()) {
     return -1;
   }

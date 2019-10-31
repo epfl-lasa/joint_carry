@@ -76,6 +76,8 @@
     <param name="topic_name_left_ds_vel" value="/left/ds_desired_velocity"/>
 
 
+    <rosparam command="load" file="$(find joint_carry)/config/controller_params.yaml"/>
+
 <!--     <rosparam command="load" file="$(find ds_motion_generator)/config/s4_back_GMM.yml"/>
  -->    <node name="controller_node" pkg="joint_carry" type="joint_carry_node" output="screen"/>
 

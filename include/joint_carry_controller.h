@@ -86,11 +86,11 @@ private:
 	ros::Publisher pub_right_robot_command_orient_ ;
 	ros::Publisher pub_left_robot_command_orient_ ;
 
-	ros::Publisher pub_right_grasp_pose_;		
+	ros::Publisher pub_right_grasp_pose_;
 	ros::Publisher pub_left_grasp_pose_;
 
 	ros::Subscriber sub_right_ds_vel_;
-	ros::Subscriber sub_left_ds_vel_;	
+	ros::Subscriber sub_left_ds_vel_;
 
 	// ros::Publisher pub_desired_twist_;
 	// ros::Publisher pub_desired_twist_filtered_;
@@ -100,17 +100,17 @@ private:
 	std::string topic_name_right_robot_pose_;
 	std::string topic_name_left_robot_pose_;
 	std::string topic_name_right_hand_command_;
-    std::string topic_name_left_hand_command_;
-    std::string topic_name_right_robot_command_vel_;
+	std::string topic_name_left_hand_command_;
+	std::string topic_name_right_robot_command_vel_;
 	std::string topic_name_left_robot_command_vel_;
 	std::string topic_name_right_robot_command_orient_;
 	std::string topic_name_left_robot_command_orient_;
 	std::string topic_name_right_ds_vel_;
-	std::string topic_name_left_ds_vel_;	
-	
+	std::string topic_name_left_ds_vel_;
 
-  	std::string topic_name_right_grasp_pose_;
-  	std::string topic_name_left_grasp_pose_;
+
+	std::string topic_name_right_grasp_pose_;
+	std::string topic_name_left_grasp_pose_;
 
 
 
@@ -130,7 +130,7 @@ private:
 	Vector3d left_robot_position_;
 
 	Quaterniond right_robot_orientation_;
-  	Quaterniond left_robot_orientation_;
+	Quaterniond left_robot_orientation_;
 
 	// MathLib::Vector real_pose_;
 	// MathLib::Vector target_pose_;
@@ -145,32 +145,42 @@ private:
 
 
 
-tf::TransformListener tf_listener_;
+	tf::TransformListener tf_listener_;
 
-  Vector7d right_grasp_pose_;
-  Vector7d left_grasp_pose_;
+	Vector7d right_grasp_pose_;
+	Vector7d left_grasp_pose_;
 
 
-  Vector3d right_ds_vel_;
-  Vector3d left_ds_vel_;
+	Vector3d right_ds_vel_;
+	Vector3d left_ds_vel_;
 
+
+	double hand_max_closure_;
+	double hand_grasp_trigger_dist_;
+	double hand_grasp_complete_dist_;
+
+	bool flag_left_grasp_compelete_;
+	bool flag_right_grasp_compelete_;
 
 
 public:
 	JointCarryController(ros::NodeHandle &n,
-	                  double frequency,
-	                  std::string topic_name_right_robot_pose,
-	                  std::string topic_name_left_robot_pose,
-	                  std::string topic_name_right_hand_command,
-	                  std::string topic_name_left_hand_command,
-                      std::string topic_name_right_robot_command_vel,
-                      std::string topic_name_left_robot_command_vel,
-                      std::string topic_name_right_robot_command_orient,
-                      std::string topic_name_left_robot_command_orient,
-                      std::string topic_name_right_grasp_pose,
-                      std::string topic_name_left_grasp_pose,
-                      std::string topic_name_right_ds_vel,
-					  std::string topic_name_left_ds_vel);
+	                     double frequency,
+	                     std::string topic_name_right_robot_pose,
+	                     std::string topic_name_left_robot_pose,
+	                     std::string topic_name_right_hand_command,
+	                     std::string topic_name_left_hand_command,
+	                     std::string topic_name_right_robot_command_vel,
+	                     std::string topic_name_left_robot_command_vel,
+	                     std::string topic_name_right_robot_command_orient,
+	                     std::string topic_name_left_robot_command_orient,
+	                     std::string topic_name_right_grasp_pose,
+	                     std::string topic_name_left_grasp_pose,
+	                     std::string topic_name_right_ds_vel,
+	                     std::string topic_name_left_ds_vel,
+	                     double hand_max_closure,
+	                     double hand_grasp_trigger_dist,
+	                     double hand_grasp_complete_dist);
 
 	bool Init();
 
@@ -195,6 +205,8 @@ private:
 
 	void UpdateRightDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
 	void UpdateLeftDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
+	int distance_to_colusre(double distance_to_goal);  // int since qbhand in TICK mode
+
 
 
 
