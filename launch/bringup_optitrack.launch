@@ -33,7 +33,8 @@
     0.685, -0.697, -0.144, 0.15 /guard /right_grasp 100"/>
 
   # extracted by running rosrun tf tf_echo guard left_lwr_7_link
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.630, -0.299, 0.180 -0.658, 0.679, 0.254, -0.205 /guard /left_grasp 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.580, -0.313, 0.204
+    0.694, -0.688, -0.172, 0.122 /guard /left_grasp 100"/>
 
   "$(find lwr_simple_example)/launch/rviz/rviz_config.rviz"
 

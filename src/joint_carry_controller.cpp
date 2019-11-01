@@ -148,16 +148,6 @@ void JointCarryController::Run() {
 
 	while (nh_.ok()) {
 
-		ROS_WARN_THROTTLE(1, "Updating the hand commands ....");
-
-
-
-
-		// right_hand_closure_.closure.clear();
-		// right_hand_closure_.closure.push_back(19000.0);
-
-		// left_hand_closure_.closure.clear();
-		// left_hand_closure_.closure.push_back(19000.0);
 
 
 		update_right_grasp_point();
@@ -257,6 +247,10 @@ void JointCarryController::UpdateRightRobotTask() {
 	Eigen::Quaterniond q_diff = qd * right_robot_orientation_.inverse();
 	Eigen::AngleAxisd diff_axang(q_diff);
 
+	if(diff_axang.angle() > 3.14 || diff_axang.angle() < -3.14){
+		ROS_WARN_STREAM_THROTTLE(1, "The angle is too big: " << diff_axang.angle() );
+	}
+
 	diff_axang.angle() = (diff_axang.angle() > 0.2) ?  0.2 : diff_axang.angle();
 	diff_axang.angle() = (diff_axang.angle() < -0.2) ? -0.2 : diff_axang.angle();
 
@@ -349,14 +343,26 @@ void JointCarryController::UpdateLeftRobotTask() {
 
 	Eigen::Quaterniond qd;
 	qd.coeffs() << left_grasp_pose_.bottomRows(4) / left_grasp_pose_.bottomRows(4).norm();
+
+	if (qd.coeffs().dot(left_robot_orientation_.coeffs()) < 0.0) {
+		qd.coeffs() << -qd.coeffs();
+	}
+
+
 	Eigen::Quaterniond q_diff = qd * left_robot_orientation_.inverse();
 	Eigen::AngleAxisd diff_axang(q_diff);
+
+	if(diff_axang.angle() > 3.14 || diff_axang.angle() < -3.14){
+		ROS_WARN_STREAM_THROTTLE(1, "The angle is too big: " << diff_axang.angle() );
+	}
+
 
 	diff_axang.angle() = (diff_axang.angle() > 0.2) ?  0.2 : diff_axang.angle();
 	diff_axang.angle() = (diff_axang.angle() < -0.2) ? -0.2 : diff_axang.angle();
 
 	Eigen::Quaterniond diff_clamped(diff_axang);
 	qd = diff_clamped * left_robot_orientation_;
+	qd.normalize();
 
 
 	geometry_msgs::Quaternion quat_msg;
