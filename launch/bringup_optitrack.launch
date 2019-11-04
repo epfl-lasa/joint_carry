@@ -30,16 +30,17 @@
   # publish the hardcoded grasp points for the kuka endeffector equipped with the qbhand
   # extracted by running rosrun tf tf_echo guard right_lwr_7_link
   <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.584, 0.200, 0.182 
-    0.685, -0.697, -0.144, 0.15 /guard /right_grasp 100"/>
+    0.685, -0.697, -0.144, 0.15 /guard /right_grasp 1"/>
 
   # extracted by running rosrun tf tf_echo guard left_lwr_7_link
   <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.580, -0.313, 0.204
-    0.694, -0.688, -0.172, 0.122 /guard /left_grasp 100"/>
+    0.694, -0.688, -0.172, 0.122 /guard /left_grasp 1"/>
 
   # extracted by running rosrun tf tf_echo mocap_world guard
   # for now, I only care about the orientation of the guard
-  <node pkg="tf" type="static_transform_publisher" name="guard_desired_pose" args="0, 0, 0
-    0, 0, 0, 0 /mocap_world /guard 100"/>
+  # extracted by running rosrun tf tf_echo mocap_world guard
+  <node pkg="tf" type="static_transform_publisher" name="guard_desired_pose" args="0.872, -0.139, 0.937
+    0, 0, 0, 1 /mocap_world /guard_desired_pose 1"/>
 
 
 
