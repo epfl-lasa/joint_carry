@@ -154,7 +154,7 @@ void JointCarryController::Run() {
 	while (nh_.ok()) {
 
 
-		ROS_WARN_STREAM_THROTTLE(1, "flag: " << flag_right_grasp_compelete_ << " closure: " << right_hand_closure_.closure[0]);
+		// ROS_WARN_STREAM_THROTTLE(1, "flag: " << flag_right_grasp_compelete_ << " closure: " << right_hand_closure_.closure[0]);
 
 		UpdateRightQBHandControl();
 		UpdateLeftQBHandControl();
@@ -173,6 +173,7 @@ void JointCarryController::Run() {
 		}
 		else
 		{
+			ROS_INFO_STREAM_THROTTLE(2, "Control the guard dynamics");
 			ComputeGuardDesiredDynamics();
 
 		}
@@ -193,6 +194,11 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 
 	qd = guard_desired_orientation_;
 	qr.coeffs() << guard_pose_.bottomRows(4);
+	qr.normalize();
+
+	ROS_INFO_STREAM_THROTTLE(2, "Real quat " << qr.coeffs() );
+	ROS_INFO_STREAM_THROTTLE(2, "desired quat " << qd.coeffs() );
+
 
 	if (qd.coeffs().dot(qr.coeffs()) < 0.0) {
 		qr.coeffs() << -qr.coeffs();
@@ -203,6 +209,7 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 
 
 	Vector3d guard_desired_angular_vel = -1 * err_axang.axis() * err_axang.angle();
+	ROS_INFO_STREAM_THROTTLE(2, "Desired angular velocity for the guard center " << guard_desired_angular_vel );
 
 
 
@@ -230,6 +237,12 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 	twist_msg.linear.z = left_lwr_vel(2);
 
 	// pub_left_robot_command_vel_.publish(twist_msg);
+
+
+
+	ROS_INFO_STREAM_THROTTLE(2, "Computed velocities for the right lwr " << right_lwr_vel );
+	ROS_INFO_STREAM_THROTTLE(2, "Computed velocities for the left lwr  " << left_lwr_vel );
+
 
 
 }
