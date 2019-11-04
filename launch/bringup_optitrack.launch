@@ -36,7 +36,11 @@
   <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.580, -0.313, 0.204
     0.694, -0.688, -0.172, 0.122 /guard /left_grasp 100"/>
 
-  "$(find lwr_simple_example)/launch/rviz/rviz_config.rviz"
+  # extracted by running rosrun tf tf_echo mocap_world guard
+  # for now, I only care about the orientation of the guard
+  <node pkg="tf" type="static_transform_publisher" name="guard_desired_pose" args="0, 0, 0
+    0, 0, 0, 0 /mocap_world /guard 100"/>
+
 
 
   <arg name="rviz_config" default="$(find joint_carry)/config/rviz_config.rviz"/>

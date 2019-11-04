@@ -60,6 +60,7 @@
     <param name="topic_name_left_robot_pose" value="/left_lwr/ee_pose"/>
 
     <!-- the main node publishes the grasp point to DSs to get back the desired velocities -->
+    <param name="topic_name_guard_pose" value="/main_node/guard_pose"/>
     <param name="topic_name_right_grasp_pose" value="/main_node/right_grasp_pose"/>
     <param name="topic_name_left_grasp_pose" value="/main_node/left_grasp_pose"/>
 

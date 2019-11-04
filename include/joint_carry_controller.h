@@ -86,6 +86,7 @@ private:
 	ros::Publisher pub_right_robot_command_orient_ ;
 	ros::Publisher pub_left_robot_command_orient_ ;
 
+	ros::Publisher pub_guard_pose_;
 	ros::Publisher pub_right_grasp_pose_;
 	ros::Publisher pub_left_grasp_pose_;
 
@@ -109,6 +110,7 @@ private:
 	std::string topic_name_left_ds_vel_;
 
 
+	std::string topic_name_guard_pose_;
 	std::string topic_name_right_grasp_pose_;
 	std::string topic_name_left_grasp_pose_;
 
@@ -147,8 +149,15 @@ private:
 
 	tf::TransformListener tf_listener_;
 
+	Vector7d guard_pose_; // pose of the guard in the world frame
 	Vector7d right_grasp_pose_;
 	Vector7d left_grasp_pose_;
+
+	Vector3d guard_to_right_ee_in_world_;
+	Vector3d guard_to_left_ee_in_world_;
+
+	Quaterniond guard_desired_orientation_;
+	Vector3d guard_desired_velocity_;
 
 
 	Vector3d right_ds_vel_;
@@ -174,6 +183,7 @@ public:
 	                     std::string topic_name_left_robot_command_vel,
 	                     std::string topic_name_right_robot_command_orient,
 	                     std::string topic_name_left_robot_command_orient,
+	                     std::string topic_name_guard_pose,
 	                     std::string topic_name_right_grasp_pose,
 	                     std::string topic_name_left_grasp_pose,
 	                     std::string topic_name_right_ds_vel,
@@ -194,18 +204,31 @@ private:
 	void UpdateLeftRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg);
 
 
-	void UpdateRightRobotTask();
-	void UpdateLeftRobotTask();
+	void RightLwrReachToGrasp();
+	void LeftLwrReachToGrasp();
+
+	void UpdateRightQBHandControl();
+	void UpdateLeftQBHandControl();
 
 
 	void wait_for_transformtaions();
 	bool update_right_grasp_point();
 	bool update_left_grasp_point();
+	bool UpdateGuardCenterPose();
+
+	void UpdateLwrsOrientatinControl();
+
+	void ComputeGuardDesiredDynamics();
+
 
 
 	void UpdateRightDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
 	void UpdateLeftDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
+
 	int distance_to_colusre(double distance_to_goal);  // int since qbhand in TICK mode
+
+
+	Eigen::Quaterniond clamp_quat(Eigen::Quaterniond qd, Eigen::Quaterniond qr , double max_angle );
 
 
 
