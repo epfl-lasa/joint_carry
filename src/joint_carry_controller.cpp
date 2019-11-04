@@ -128,6 +128,7 @@ bool JointCarryController::Init() {
 
 
 
+
 		ROS_INFO("The controller is initialized.");
 		return true;
 	}
@@ -152,6 +153,9 @@ void JointCarryController::Run() {
 
 	while (nh_.ok()) {
 
+
+		ROS_WARN_STREAM_THROTTLE(1, "flag: " << flag_right_grasp_compelete_ << " closure: " << right_hand_closure_.closure[0]);
+
 		UpdateRightQBHandControl();
 		UpdateLeftQBHandControl();
 
@@ -162,7 +166,7 @@ void JointCarryController::Run() {
 
 
 
-		if (!flag_right_grasp_compelete_ && !flag_left_grasp_compelete_) {
+		if (!flag_right_grasp_compelete_ || !flag_left_grasp_compelete_) {
 
 			RightLwrReachToGrasp();
 			LeftLwrReachToGrasp();
@@ -235,10 +239,11 @@ void JointCarryController::UpdateRightQBHandControl() {
 
 	update_right_grasp_point();
 
+	right_hand_closure_.closure.clear();
+
 	double distance_to_goal = (right_robot_position_ - right_grasp_pose_.head(3)).norm();
 
 	if (!flag_right_grasp_compelete_) {
-		right_hand_closure_.closure.clear();
 
 		if (distance_to_goal > hand_grasp_complete_dist_) {
 			right_hand_closure_.closure.push_back(distance_to_colusre(distance_to_goal));
@@ -251,28 +256,27 @@ void JointCarryController::UpdateRightQBHandControl() {
 		ROS_INFO_STREAM_THROTTLE(1, "Distance to right grasp point: " << distance_to_goal
 		                         << " hand_clousre: " << right_hand_closure_.closure[0]);
 
-		pub_right_hand_command_.publish(right_hand_closure_);
-
 	}
+	else if (distance_to_goal > hand_grasp_trigger_dist_) {
 
-	if (flag_right_grasp_compelete_ && distance_to_goal > hand_grasp_trigger_dist_) {
 		ROS_WARN("object realsed from the right hand.");
-		right_hand_closure_.closure.clear();
 		right_hand_closure_.closure.push_back(0);
-		pub_right_hand_command_.publish(right_hand_closure_);
 		flag_right_grasp_compelete_ = false;
 	}
+
+	pub_right_hand_command_.publish(right_hand_closure_);
+
 
 }
 
 void JointCarryController::UpdateLeftQBHandControl() {
 
 	update_left_grasp_point();
+	left_hand_closure_.closure.clear();
 
 	double distance_to_goal = (left_robot_position_ - left_grasp_pose_.head(3)).norm();
 
 	if (!flag_left_grasp_compelete_) {
-		left_hand_closure_.closure.clear();
 
 		if (distance_to_goal > hand_grasp_complete_dist_) {
 			left_hand_closure_.closure.push_back(distance_to_colusre(distance_to_goal));
@@ -285,17 +289,13 @@ void JointCarryController::UpdateLeftQBHandControl() {
 		ROS_INFO_STREAM_THROTTLE(1, "Distance to left grasp point: " << distance_to_goal
 		                         << " hand_clousre: " << left_hand_closure_.closure[0]);
 
-		pub_left_hand_command_.publish(left_hand_closure_);
-
 	}
-
-	if (flag_left_grasp_compelete_ && distance_to_goal > hand_grasp_trigger_dist_) {
+	else if (distance_to_goal > hand_grasp_trigger_dist_) {
 		ROS_WARN("object realsed from the left hand.");
-		left_hand_closure_.closure.clear();
 		left_hand_closure_.closure.push_back(0);
-		pub_left_hand_command_.publish(left_hand_closure_);
 		flag_left_grasp_compelete_ = false;
 	}
+	pub_left_hand_command_.publish(left_hand_closure_);
 
 }
 
