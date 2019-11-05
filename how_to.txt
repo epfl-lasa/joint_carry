@@ -1,0 +1,8 @@
+
+
+
+# run the right lwr like this:
+
+roslaunch lwr_simple_example real.launch robot_name:=right_lwr robot_world:=right_lwr_base
+
+roslaunch lwr_fri lwr_fri_console.launch robot_name:=right_lwr

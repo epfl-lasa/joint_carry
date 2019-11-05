@@ -168,6 +168,9 @@ private:
 	double hand_grasp_trigger_dist_;
 	double hand_grasp_complete_dist_;
 
+	double right_palm_guard_distance_;
+	double left_palm_guard_distance_;
+
 	bool flag_left_grasp_compelete_;
 	bool flag_right_grasp_compelete_;
 

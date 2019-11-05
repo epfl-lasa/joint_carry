@@ -188,16 +188,20 @@ void JointCarryController::Run() {
 
 void JointCarryController::ComputeGuardDesiredDynamics() {
 
+
+	UpdateGuardCenterPose();
+
 	// for now let's just assume we want to keep the guard balanced
 
-	Eigen::Quaterniond qd, qr;
+	Eigen::Quaterniond qd;
+	Eigen::Quaterniond qr;
 
 	qd = guard_desired_orientation_;
 	qr.coeffs() << guard_pose_.bottomRows(4);
 	qr.normalize();
 
-	ROS_INFO_STREAM_THROTTLE(2, "Real quat " << qr.coeffs() );
-	ROS_INFO_STREAM_THROTTLE(2, "desired quat " << qd.coeffs() );
+	// ROS_INFO_STREAM_THROTTLE(2, "Real quat " << qr.coeffs() );
+	// ROS_INFO_STREAM_THROTTLE(2, "desired quat " << qd.coeffs() );
 
 
 	if (qd.coeffs().dot(qr.coeffs()) < 0.0) {
@@ -208,14 +212,28 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 	Eigen::AngleAxisd err_axang(q_err);
 
 
-	Vector3d guard_desired_angular_vel = -1 * err_axang.axis() * err_axang.angle();
-	ROS_INFO_STREAM_THROTTLE(2, "Desired angular velocity for the guard center " << guard_desired_angular_vel );
+	Vector3d guard_desired_angular_vel = -5 * err_axang.axis() * err_axang.angle();
+	// ROS_INFO_STREAM_THROTTLE(2, "Desired angular velocity for the guard center " << guard_desired_angular_vel );
 
 
 
 	Vector3d right_lwr_vel = guard_desired_angular_vel.cross(guard_to_right_ee_in_world_);
 	Vector3d left_lwr_vel  = guard_desired_angular_vel.cross(guard_to_left_ee_in_world_);
 
+
+
+	double vel_limit = 0.12;
+
+	if (right_lwr_vel.norm() > vel_limit) {
+		right_lwr_vel *= (vel_limit / right_lwr_vel.norm() );
+	}
+
+	if (left_lwr_vel.norm() > vel_limit) {
+		left_lwr_vel *= (vel_limit / left_lwr_vel.norm() );
+	}
+
+	ROS_INFO_STREAM_THROTTLE(2, "Computed velocities for the right lwr " << right_lwr_vel.transpose() );
+	ROS_INFO_STREAM_THROTTLE(2, "Computed velocities for the left lwr  " << left_lwr_vel.transpose() );
 
 
 	// sending the DS vels to the robot
@@ -229,19 +247,14 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 	twist_msg.linear.z = right_lwr_vel(2);
 
 
-	// pub_right_robot_command_vel_.publish(twist_msg);
+	pub_right_robot_command_vel_.publish(twist_msg);
 
 
 	twist_msg.linear.x = left_lwr_vel(0);
 	twist_msg.linear.y = left_lwr_vel(1);
 	twist_msg.linear.z = left_lwr_vel(2);
 
-	// pub_left_robot_command_vel_.publish(twist_msg);
-
-
-
-	ROS_INFO_STREAM_THROTTLE(2, "Computed velocities for the right lwr " << right_lwr_vel );
-	ROS_INFO_STREAM_THROTTLE(2, "Computed velocities for the left lwr  " << left_lwr_vel );
+	pub_left_robot_command_vel_.publish(twist_msg);
 
 
 
@@ -254,23 +267,24 @@ void JointCarryController::UpdateRightQBHandControl() {
 
 	right_hand_closure_.closure.clear();
 
-	double distance_to_goal = (right_robot_position_ - right_grasp_pose_.head(3)).norm();
+	// replaced by right_palm_guard_distance_ (less sensetive to orientation)
+	// double distance_to_goal = (right_robot_position_ - right_grasp_pose_.head(3)).norm();
 
 	if (!flag_right_grasp_compelete_) {
 
-		if (distance_to_goal > hand_grasp_complete_dist_) {
-			right_hand_closure_.closure.push_back(distance_to_colusre(distance_to_goal));
+		if (right_palm_guard_distance_ > hand_grasp_complete_dist_) {
+			right_hand_closure_.closure.push_back(distance_to_colusre(right_palm_guard_distance_));
 		}
 		else {
 			right_hand_closure_.closure.push_back(hand_max_closure_);
 			flag_right_grasp_compelete_ = true;
 		}
 
-		ROS_INFO_STREAM_THROTTLE(1, "Distance to right grasp point: " << distance_to_goal
+		ROS_INFO_STREAM_THROTTLE(1, "Distance to right grasp point: " << right_palm_guard_distance_
 		                         << " hand_clousre: " << right_hand_closure_.closure[0]);
 
 	}
-	else if (distance_to_goal > hand_grasp_trigger_dist_) {
+	else if (right_palm_guard_distance_ > 2 * hand_grasp_trigger_dist_) {
 
 		ROS_WARN("object realsed from the right hand.");
 		right_hand_closure_.closure.push_back(0);
@@ -287,23 +301,24 @@ void JointCarryController::UpdateLeftQBHandControl() {
 	update_left_grasp_point();
 	left_hand_closure_.closure.clear();
 
-	double distance_to_goal = (left_robot_position_ - left_grasp_pose_.head(3)).norm();
+	// replaced by left_palm_guard_distance_ (less sensetive to orientation)
+	// double distance_to_goal = (left_robot_position_ - left_grasp_pose_.head(3)).norm();
 
 	if (!flag_left_grasp_compelete_) {
 
-		if (distance_to_goal > hand_grasp_complete_dist_) {
-			left_hand_closure_.closure.push_back(distance_to_colusre(distance_to_goal));
+		if (left_palm_guard_distance_ > hand_grasp_complete_dist_) {
+			left_hand_closure_.closure.push_back(distance_to_colusre(left_palm_guard_distance_));
 		}
 		else {
 			left_hand_closure_.closure.push_back(hand_max_closure_);
 			flag_left_grasp_compelete_ = true;
 		}
 
-		ROS_INFO_STREAM_THROTTLE(1, "Distance to left grasp point: " << distance_to_goal
+		ROS_INFO_STREAM_THROTTLE(1, "Distance to left grasp point: " << left_palm_guard_distance_
 		                         << " hand_clousre: " << left_hand_closure_.closure[0]);
 
 	}
-	else if (distance_to_goal > hand_grasp_trigger_dist_) {
+	else if (left_palm_guard_distance_ > 2 * hand_grasp_trigger_dist_) {
 		ROS_WARN("object realsed from the left hand.");
 		left_hand_closure_.closure.push_back(0);
 		flag_left_grasp_compelete_ = false;
@@ -504,11 +519,13 @@ bool JointCarryController::UpdateGuardCenterPose()
 	try {
 		tf_listener_.lookupTransform("guard", "right_lwr_7_link",
 		                             ros::Time(0), transform);
-		vec_tmp = transform_guard * transform.getOrigin();
+		vec_tmp = transform_guard.getBasis() * transform.getOrigin();
 
 		guard_to_right_ee_in_world_(0) = vec_tmp.getX();
 		guard_to_right_ee_in_world_(1) = vec_tmp.getY();
 		guard_to_right_ee_in_world_(2) = vec_tmp.getZ();
+
+		ROS_INFO_STREAM_THROTTLE(2, "guard_to_right_ee_in_world_:" << guard_to_right_ee_in_world_.transpose());
 	}
 	catch (tf::TransformException ex) {
 		ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: from guard to right_lwr_7_link" );
@@ -519,11 +536,14 @@ bool JointCarryController::UpdateGuardCenterPose()
 	try {
 		tf_listener_.lookupTransform("guard", "left_lwr_7_link",
 		                             ros::Time(0), transform);
-		vec_tmp = transform_guard * transform.getOrigin();
+		vec_tmp = transform_guard.getBasis() * transform.getOrigin();
 
 		guard_to_left_ee_in_world_(0) = vec_tmp.getX();
 		guard_to_left_ee_in_world_(1) = vec_tmp.getY();
 		guard_to_left_ee_in_world_(2) = vec_tmp.getZ();
+
+		ROS_INFO_STREAM_THROTTLE(2, "guard_to_left_ee_in_world_:" << guard_to_left_ee_in_world_.transpose());
+
 	}
 	catch (tf::TransformException ex) {
 		ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: from guard to left_lwr_7_link" );
@@ -533,10 +553,11 @@ bool JointCarryController::UpdateGuardCenterPose()
 	try {
 		tf_listener_.lookupTransform("mocap_world", "guard_desired_pose",
 		                             ros::Time(0), transform);
-		guard_desired_orientation_.x() = transform_guard.getRotation().x();
-		guard_desired_orientation_.y() = transform_guard.getRotation().y();
-		guard_desired_orientation_.z() = transform_guard.getRotation().z();
-		guard_desired_orientation_.w() = transform_guard.getRotation().w();
+		guard_desired_orientation_.x() = transform.getRotation().x();
+		guard_desired_orientation_.y() = transform.getRotation().y();
+		guard_desired_orientation_.z() = transform.getRotation().z();
+		guard_desired_orientation_.w() = transform.getRotation().w();
+
 	}
 	catch (tf::TransformException ex) {
 		ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: from mocap_world to guard_desired_pose" );
@@ -588,6 +609,18 @@ bool JointCarryController::update_right_grasp_point()
 		return false;
 	}
 
+	try {
+		tf_listener_.lookupTransform("right_palm", "guard_right_corner",
+		                             ros::Time(0), transform);
+		right_palm_guard_distance_ = transform.getOrigin().length();
+	}
+	catch (tf::TransformException ex) {
+		ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: from /right_palm to /guard_right_corner" );
+		return false;
+	}
+
+
+
 	return true;
 
 }
@@ -625,6 +658,17 @@ bool JointCarryController::update_left_grasp_point()
 	}
 	catch (tf::TransformException ex) {
 		ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: from left_lwr_base_link to /left_grasp" );
+		return false;
+	}
+
+
+	try {
+		tf_listener_.lookupTransform("left_palm", "guard_left_corner",
+		                             ros::Time(0), transform);
+		left_palm_guard_distance_ = transform.getOrigin().length();
+	}
+	catch (tf::TransformException ex) {
+		ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: from /left_palm to /guard_left_corner" );
 		return false;
 	}
 

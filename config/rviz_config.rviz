@@ -59,11 +59,9 @@ Visualization Manager:
         All Enabled: false
         guard:
           Value: true
+        guard_desired_pose:
+          Value: true
         left_grasp:
-          Value: true
-        left_lwr/rot_msr_:
-          Value: true
-        left_lwr/rot_target_:
           Value: true
         left_lwr_1_link:
           Value: false
@@ -89,10 +87,6 @@ Visualization Manager:
           Value: true
         right_grasp:
           Value: true
-        right_lwr/rot_msr_:
-          Value: true
-        right_lwr/rot_target_:
-          Value: true
         right_lwr_1_link:
           Value: false
         right_lwr_2_link:
@@ -113,8 +107,6 @@ Visualization Manager:
           Value: true
         right_lwr_markers:
           Value: true
-        world:
-          Value: true
       Marker Scale: 0.5
       Name: TF
       Show Arrows: true
@@ -122,22 +114,7 @@ Visualization Manager:
       Show Names: true
       Tree:
         mocap_world:
-          guard:
-            left_grasp:
-              {}
-            right_grasp:
-              {}
-          left_lwr_markers:
-            left_lwr_base:
-              left_lwr_base_link:
-                left_lwr_1_link:
-                  left_lwr_2_link:
-                    left_lwr_3_link:
-                      left_lwr_4_link:
-                        left_lwr_5_link:
-                          left_lwr_6_link:
-                            left_lwr_7_link:
-                              {}
+          {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
