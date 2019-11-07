@@ -3,6 +3,8 @@
 
 #include "ros/ros.h"
 #include "geometry_msgs/Pose.h"
+#include <geometry_msgs/Wrench.h>
+
 // #include "geometry_msgs/Twist.h"
 //#include "geometry_msgs/TwistStamped.h"
 // #include "geometry_msgs/PointStamped.h"
@@ -33,6 +35,8 @@
 #include "eigen3/Eigen/Core"
 #include "eigen3/Eigen/Geometry"
 #include "eigen3/Eigen/Dense"
+
+
 
 using namespace Eigen;
 
@@ -83,15 +87,22 @@ private:
 	ros::Publisher pub_right_robot_command_vel_;
 	ros::Publisher pub_left_robot_command_vel_ ;
 
-	ros::Publisher pub_right_robot_command_orient_ ;
-	ros::Publisher pub_left_robot_command_orient_ ;
+	ros::Publisher pub_right_robot_command_orient_;
+	ros::Publisher pub_left_robot_command_orient_;
+
+	ros::Publisher pub_right_robot_command_wrench_;
+	ros::Publisher pub_left_robot_command_wrench_;
 
 	ros::Publisher pub_guard_pose_;
+	ros::Publisher pub_guard_twist_;
+
 	ros::Publisher pub_right_grasp_pose_;
 	ros::Publisher pub_left_grasp_pose_;
 
 	ros::Subscriber sub_right_ds_vel_;
 	ros::Subscriber sub_left_ds_vel_;
+
+	ros::Subscriber sub_guard_desired_velocity_;
 
 	// ros::Publisher pub_desired_twist_;
 	// ros::Publisher pub_desired_twist_filtered_;
@@ -106,11 +117,19 @@ private:
 	std::string topic_name_left_robot_command_vel_;
 	std::string topic_name_right_robot_command_orient_;
 	std::string topic_name_left_robot_command_orient_;
+	std::string topic_name_right_robot_command_wrench_;
+	std::string topic_name_left_robot_command_wrench_;
+
 	std::string topic_name_right_ds_vel_;
 	std::string topic_name_left_ds_vel_;
 
+	std::string topic_name_guard_desired_velocity_;
+
+
 
 	std::string topic_name_guard_pose_;
+	std::string topic_name_guard_twist_;
+
 	std::string topic_name_right_grasp_pose_;
 	std::string topic_name_left_grasp_pose_;
 
@@ -162,6 +181,7 @@ private:
 
 	Vector3d right_ds_vel_;
 	Vector3d left_ds_vel_;
+	Vector3d guard_desired_vel_;
 
 
 	double hand_max_closure_;
@@ -173,6 +193,11 @@ private:
 
 	bool flag_left_grasp_compelete_;
 	bool flag_right_grasp_compelete_;
+
+	double guard_weight_;
+	geometry_msgs::Wrench left_lwr_wrench_msg_;
+	geometry_msgs::Wrench right_lwr_wrench_msg_;
+
 
 
 public:
@@ -186,14 +211,19 @@ public:
 	                     std::string topic_name_left_robot_command_vel,
 	                     std::string topic_name_right_robot_command_orient,
 	                     std::string topic_name_left_robot_command_orient,
+	                     std::string topic_name_right_robot_command_wrench,
+	                     std::string topic_name_left_robot_command_wrench,
 	                     std::string topic_name_guard_pose,
+	                     std::string topic_name_guard_twist,
 	                     std::string topic_name_right_grasp_pose,
 	                     std::string topic_name_left_grasp_pose,
 	                     std::string topic_name_right_ds_vel,
 	                     std::string topic_name_left_ds_vel,
+	                     std::string topic_name_guard_desired_velocity,
 	                     double hand_max_closure,
 	                     double hand_grasp_trigger_dist,
-	                     double hand_grasp_complete_dist);
+	                     double hand_grasp_complete_dist,
+	                     double guard_weight);
 
 	bool Init();
 
@@ -227,6 +257,11 @@ private:
 
 	void UpdateRightDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
 	void UpdateLeftDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
+
+	void UpdateGuardDesiredVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
+
+	void UpdateGuardWeightCancelation();
+
 
 	int distance_to_colusre(double distance_to_goal);  // int since qbhand in TICK mode
 

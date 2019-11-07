@@ -14,14 +14,19 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
         std::string topic_name_left_robot_command_vel,
         std::string topic_name_right_robot_command_orient,
         std::string topic_name_left_robot_command_orient,
+        std::string topic_name_right_robot_command_wrench,
+        std::string topic_name_left_robot_command_wrench,
         std::string topic_name_guard_pose,
+        std::string topic_name_guard_twist,
         std::string topic_name_right_grasp_pose,
         std::string topic_name_left_grasp_pose,
         std::string topic_name_right_ds_vel,
         std::string topic_name_left_ds_vel,
+        std::string topic_name_guard_desired_velocity,
         double hand_max_closure,
         double hand_grasp_trigger_dist,
-        double hand_grasp_complete_dist)
+        double hand_grasp_complete_dist,
+        double guard_weight)
 
 	: nh_(n),
 	  loop_rate_(frequency),
@@ -33,14 +38,19 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 	  topic_name_left_robot_command_vel_(topic_name_left_robot_command_vel),
 	  topic_name_right_robot_command_orient_(topic_name_right_robot_command_orient),
 	  topic_name_left_robot_command_orient_(topic_name_left_robot_command_orient),
+	  topic_name_right_robot_command_wrench_(topic_name_right_robot_command_wrench),
+	  topic_name_left_robot_command_wrench_(topic_name_left_robot_command_wrench),
 	  topic_name_guard_pose_(topic_name_guard_pose),
+	  topic_name_guard_twist_(topic_name_guard_twist),
 	  topic_name_right_grasp_pose_(topic_name_right_grasp_pose),
 	  topic_name_left_grasp_pose_(topic_name_left_grasp_pose),
 	  topic_name_right_ds_vel_(topic_name_right_ds_vel),
 	  topic_name_left_ds_vel_(topic_name_left_ds_vel),
+	  topic_name_guard_desired_velocity_(topic_name_guard_desired_velocity),
 	  hand_max_closure_(hand_max_closure),
 	  hand_grasp_trigger_dist_(hand_grasp_trigger_dist),
 	  hand_grasp_complete_dist_(hand_grasp_complete_dist),
+	  guard_weight_(guard_weight),
 	  dt_(1 / frequency)
 	  // scaling_factor_(1),
 {
@@ -69,6 +79,8 @@ bool JointCarryController::Init() {
 	pub_right_robot_command_orient_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_right_robot_command_orient_, 1);
 	pub_left_robot_command_orient_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_left_robot_command_orient_, 1);
 
+	pub_right_robot_command_wrench_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_right_robot_command_wrench_, 1);
+	pub_left_robot_command_wrench_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_left_robot_command_wrench_, 1);
 
 	// pub_desired_twist_ = nh_.advertise<geometry_msgs::Twist>(output_topic_name_, 1);
 
@@ -80,17 +92,25 @@ bool JointCarryController::Init() {
 
 	// topis to communicate with the Dynamical Systems
 	pub_guard_pose_ = nh_.advertise<geometry_msgs::Pose>(topic_name_guard_pose_, 1);
+	pub_guard_twist_ = nh_.advertise<geometry_msgs::Twist>(topic_name_guard_twist_, 1);
 
 	pub_right_grasp_pose_ = nh_.advertise<geometry_msgs::Pose>(topic_name_right_grasp_pose_, 1);
 	pub_left_grasp_pose_ = nh_.advertise<geometry_msgs::Pose>(topic_name_left_grasp_pose_, 1);
 
-	sub_right_ds_vel_ = nh_.subscribe(topic_name_right_ds_vel_, 1000,
+	sub_right_ds_vel_ = nh_.subscribe(topic_name_right_ds_vel_, 1,
 	                                  &JointCarryController::UpdateRightDSVelocity,
 	                                  this, ros::TransportHints().reliable().tcpNoDelay());
 
-	sub_left_ds_vel_ = nh_.subscribe(topic_name_left_ds_vel_, 1000,
+	sub_left_ds_vel_ = nh_.subscribe(topic_name_left_ds_vel_, 1,
 	                                 &JointCarryController::UpdateLeftDSVelocity,
 	                                 this, ros::TransportHints().reliable().tcpNoDelay());
+
+	sub_guard_desired_velocity_ = nh_.subscribe(topic_name_guard_desired_velocity_, 1,
+	                              &JointCarryController::UpdateGuardDesiredVelocity,
+	                              this, ros::TransportHints().reliable().tcpNoDelay());
+
+
+
 
 	// float32 closure[1];
 	// closure[0] = 19000.0;
@@ -108,10 +128,27 @@ bool JointCarryController::Init() {
 
 	right_ds_vel_.setZero();
 	left_ds_vel_.setZero();
+	guard_desired_vel_.setZero();
 
 
 	right_robot_orientation_.setIdentity();
 	left_robot_orientation_.setIdentity();
+
+	//preparing the wrench messages
+	left_lwr_wrench_msg_.force.x = 0;
+	left_lwr_wrench_msg_.force.y = 0;
+	left_lwr_wrench_msg_.force.z = 0;
+	left_lwr_wrench_msg_.torque.x = 0;
+	left_lwr_wrench_msg_.torque.y = 0;
+	left_lwr_wrench_msg_.torque.z = 0;
+
+	right_lwr_wrench_msg_.force.x = 0;
+	right_lwr_wrench_msg_.force.y = 0;
+	right_lwr_wrench_msg_.force.z = 0;
+	right_lwr_wrench_msg_.torque.x = 0;
+	right_lwr_wrench_msg_.torque.y = 0;
+	right_lwr_wrench_msg_.torque.z = 0;
+
 
 
 	if (nh_.ok()) { // Wait for poses being published
@@ -179,6 +216,9 @@ void JointCarryController::Run() {
 		}
 
 
+		UpdateGuardWeightCancelation();
+
+
 
 		ros::spinOnce();
 		loop_rate_.sleep();
@@ -217,8 +257,8 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 
 
 
-	Vector3d right_lwr_vel = guard_desired_angular_vel.cross(guard_to_right_ee_in_world_);
-	Vector3d left_lwr_vel  = guard_desired_angular_vel.cross(guard_to_left_ee_in_world_);
+	Vector3d right_lwr_vel = guard_desired_angular_vel.cross(guard_to_right_ee_in_world_) + guard_desired_vel_;
+	Vector3d left_lwr_vel  = guard_desired_angular_vel.cross(guard_to_left_ee_in_world_) + guard_desired_vel_;
 
 
 
@@ -256,6 +296,26 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 
 	pub_left_robot_command_vel_.publish(twist_msg);
 
+
+
+}
+
+
+void JointCarryController::UpdateGuardWeightCancelation() {
+
+	left_lwr_wrench_msg_.force.z = 0;
+	right_lwr_wrench_msg_.force.z = 0;
+
+	if (flag_right_grasp_compelete_) {
+		right_lwr_wrench_msg_.force.z = guard_weight_ / 2;
+	}
+
+	if (flag_left_grasp_compelete_) {
+		left_lwr_wrench_msg_.force.z = guard_weight_ / 2;
+	}
+
+	pub_right_robot_command_wrench_.publish(right_lwr_wrench_msg_);
+	pub_left_robot_command_wrench_.publish(left_lwr_wrench_msg_);
 
 
 }
@@ -401,7 +461,7 @@ void JointCarryController::LeftLwrReachToGrasp() {
 
 
 // ########################################################
-// ################ Topic Calbacks#########################
+// ################ Topic Callbacks #######################
 // ########################################################
 
 
@@ -428,6 +488,17 @@ void JointCarryController::UpdateLeftDSVelocity(const geometry_msgs::TwistStampe
 	// 	left_ds_vel_(0) << "\t" <<
 	// 	left_ds_vel_(1) << "\t" <<
 	// 	left_ds_vel_(2) );
+
+}
+
+
+
+
+void JointCarryController::UpdateGuardDesiredVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg) {
+
+	guard_desired_vel_(0) = msg->twist.linear.x;
+	guard_desired_vel_(1) = msg->twist.linear.y;
+	guard_desired_vel_(2) = msg->twist.linear.z;
 
 }
 

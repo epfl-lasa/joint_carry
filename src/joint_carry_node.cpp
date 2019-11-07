@@ -26,8 +26,12 @@ int main(int argc, char **argv)
   std::string topic_name_right_robot_command_orient;
   std::string topic_name_left_robot_command_orient;
 
+  std::string topic_name_right_robot_command_wrench;
+  std::string topic_name_left_robot_command_wrench;
 
   std::string topic_name_guard_pose;
+  std::string topic_name_guard_twist;
+
   std::string topic_name_right_grasp_pose;
   std::string topic_name_left_grasp_pose;
 
@@ -35,9 +39,13 @@ int main(int argc, char **argv)
   std::string topic_name_right_ds_vel;
   std::string topic_name_left_ds_vel;
 
+  std::string topic_name_guard_desired_velocity;
+
   double hand_max_closure;
   double hand_grasp_trigger_dist;
   double hand_grasp_complete_dist;
+
+  double guard_weight;
 
 
 
@@ -82,8 +90,23 @@ int main(int argc, char **argv)
     // return -1;
   }
 
+  if (!nh.getParam("topic_name_right_robot_command_wrench", topic_name_right_robot_command_wrench))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the right robot wrench command. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_left_robot_command_wrench", topic_name_left_robot_command_wrench))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the left robot wrench command. ");
+    // return -1;
+  }
+
   if (!nh.getParam("topic_name_guard_pose", topic_name_guard_pose))   {
     ROS_ERROR("Couldn't retrieve the topic name for the right grasp pose. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_guard_twist", topic_name_guard_twist))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the right grasp twist. ");
     // return -1;
   }
 
@@ -107,6 +130,11 @@ int main(int argc, char **argv)
     // return -1;
   }
 
+  if (!nh.getParam("topic_name_guard_desired_velocity", topic_name_guard_desired_velocity))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the desired velocity for the guard. ");
+    // return -1;
+  }
+
 
   if (!nh.getParam("hand_max_closure", hand_max_closure))   {
     ROS_ERROR("Couldn't retrieve the maximum closure for the QBhand. ");
@@ -120,6 +148,11 @@ int main(int argc, char **argv)
 
   if (!nh.getParam("hand_grasp_complete_dist", hand_grasp_complete_dist))   {
     ROS_ERROR("Couldn't retrieve the compelete grasp distance for the QBhand. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("guard_weight", guard_weight))   {
+    ROS_ERROR("Couldn't retrieve the the weight of the guard. ");
     // return -1;
   }
 
@@ -147,14 +180,19 @@ int main(int argc, char **argv)
       topic_name_left_robot_command_vel,
       topic_name_right_robot_command_orient,
       topic_name_left_robot_command_orient,
+      topic_name_right_robot_command_wrench,
+      topic_name_left_robot_command_wrench,
       topic_name_guard_pose,
+      topic_name_guard_twist,
       topic_name_right_grasp_pose,
       topic_name_left_grasp_pose,
       topic_name_right_ds_vel,
       topic_name_left_ds_vel,
+      topic_name_guard_desired_velocity,
       hand_max_closure,
       hand_grasp_trigger_dist,
-      hand_grasp_complete_dist);
+      hand_grasp_complete_dist,
+      guard_weight);
   if (!joint_carry_controller.Init()) {
     return -1;
   }
