@@ -54,7 +54,7 @@
 
 </group>
 
-
+<!-- the dynamics of the guard should be specified in mocap_world frame -->
 <group ns="guard_dynamics">
 
     <group ns="Task1">
@@ -62,76 +62,16 @@
         <param name="output_topic_name" value="/Task1/desired_velocity"/>
         <param name="target_topic_name" value="/Task1/ds_target"/>
         <param name="output_filtered_topic_name" value="/Task1/filter/desired_velocity"/>
-        <rosparam command="load" file="$(find ds_motion_generator)/config/Curve_go_right.yml"/>
+        <rosparam command="load" file="$(find ds_motion_generator)/config/guard_lift.yml"/>
         <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
       </group>
-
-
-      <group ns="Task2">
-        <param name="input_topic_name" value="/main_node/guard_pose"/>
-        <param name="output_topic_name" value="/Task2/desired_velocity"/>
-        <param name="target_topic_name" value="/Task2/ds_target"/>
-        <param name="output_filtered_topic_name" value="/Task2/filter/desired_velocity"/>
-        <rosparam command="load" file="$(find ds_motion_generator)/config/Curve_go_right.yml"/>
-        <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
-      </group>
-
-
-      <group ns="Task3">
-        <param name="input_topic_name" value="/main_node/guard_pose"/>
-        <param name="output_topic_name" value="/Task3/desired_velocity"/>
-        <param name="target_topic_name" value="/Task3/ds_target"/>
-        <param name="output_filtered_topic_name" value="/Task3/filter/desired_velocity"/>
-        <rosparam command="load" file="$(find ds_motion_generator)/config/Curve_go_right.yml"/>
-        <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
-      </group>
-
-
-      <group ns="Task4">
-        <param name="input_topic_name" value="/main_node/guard_pose"/>
-        <param name="output_topic_name" value="/Task4/desired_velocity"/>
-        <param name="target_topic_name" value="/Task4/ds_target"/>
-        <param name="output_filtered_topic_name" value="/Task4/filter/desired_velocity"/>
-        <rosparam command="load" file="$(find ds_motion_generator)/config/Curve_go_right.yml"/>
-        <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
-      </group>
-
-
-
-      <group ns="task_adaptation">
-        <param name="topic_real_velocity"    value="/main_node/guard_twist"/>
-        <param name="topic_task1_velocity"   value="/Task1/desired_velocity"/>
-        <param name="topic_task2_velocity"   value="/Task2/desired_velocity"/>
-        <param name="topic_task3_velocity"   value="/Task3/desired_velocity"/>
-        <param name="topic_task4_velocity"   value="/Task4/desired_velocity"/>
-        <param name="topic_adapted_velocity" value="/adapter/adapted_velocity"/>
-        <param name="topic_desired_force"    value="/adapter/desired_force"/>
-        <node name="TA_node" pkg="task_adaptation" type="task_adaptation_node" output="screen"/>
-
-        <!-- <node name="TA_record" pkg="task_adaptation" type="record_adaptation_node" output="screen"/> -->
-
-        <node name="TA_vis" pkg="task_adaptation" type="belief_visualizer_node" output="screen"/>
-
-
-      </group>
-
-
-
-<!--     <param name="input_topic_name" value="/main_node/guard_pose"/>
-
-    <param name="target_topic_name" value="/guard_dynamics/ds_attractor_position"/>
-    <param name="output_topic_name" value="/guard_dynamics/ds_desired_velocity"/>
-    <param name="output_filtered_topic_name" value="/guard_dynamics/ds_filtered_desired_velocity"/>
-    <rosparam command="load" file="$(find ds_motion_generator)/config/Curve_go_left.yml"/>
-    <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/> -->
-
 
 </group>
 
 
-  <group ns="main_node">
-    <param name="topic_name_right_robot_pose" value="/right_lwr/ee_pose"/>
-    <param name="topic_name_left_robot_pose" value="/left_lwr/ee_pose"/>
+
+<group ns="main_node">
+
 
     <!-- the main node publishes the grasp point to DSs to get back the desired velocities -->
     <param name="topic_name_guard_pose" value="/main_node/guard_pose"/>
@@ -143,6 +83,11 @@
     <param name="topic_name_right_hand_command" value="/right/qb_interface_node/qb_class/hand_ref"/>
     <param name="topic_name_left_hand_command" value="/left/qb_interface_node/qb_class/hand_ref"/>
 
+    <!-- topics to read the LWRs -->
+    <param name="topic_name_right_robot_pose" value="/right_lwr/ee_pose"/>
+    <param name="topic_name_left_robot_pose" value="/left_lwr/ee_pose"/>
+
+    <!-- topics to command the LWRs -->
     <param name="topic_name_right_robot_command_vel" value="/right_lwr/joint_controllers/passive_ds_command_vel"/>
     <param name="topic_name_left_robot_command_vel" value="/left_lwr/joint_controllers/passive_ds_command_vel"/>
 
@@ -152,23 +97,21 @@
     <param name="topic_name_right_robot_command_wrench" value="/right_lwr/joint_controllers/passive_ds_command_wrench"/>
     <param name="topic_name_left_robot_command_wrench" value="/left_lwr/joint_controllers/passive_ds_command_wrench"/>
 
+    <!-- dynamical system for reaching to grasp -->
     <param name="topic_name_right_ds_vel" value="/right/ds_desired_velocity"/>
     <param name="topic_name_left_ds_vel" value="/left/ds_desired_velocity"/>
 
-    <param name="topic_name_guard_desired_velocity" value="/adapter/adapted_velocity"/>
+    <!-- dynamical system for manipulating the guard  -->
+    <param name="topic_name_guard_desired_velocity" value="/Task1/desired_velocity"/>
 
 
 
 
     <rosparam command="load" file="$(find joint_carry)/config/controller_params.yaml"/>
+    <node name="controller_node" pkg="joint_carry" type="joint_carry_node" output="screen"/>
 
-<!--     <rosparam command="load" file="$(find ds_motion_generator)/config/s4_back_GMM.yml"/>
- -->    <node name="controller_node" pkg="joint_carry" type="joint_carry_node" output="screen"/>
 
-    <!-- # doesn't work yet, but I should follow this style -->
-    <!-- <remap from="/ds1/filter/desired_velocity" to="/lwr/joint_controllers/passive_ds_command_vel" /> -->
-
-  </group>
+</group>
 
 
 <include file="$(find joint_carry)/launch/bringup_optitrack.launch"/>

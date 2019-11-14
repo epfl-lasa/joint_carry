@@ -61,6 +61,10 @@ Visualization Manager:
           Value: true
         guard_desired_pose:
           Value: true
+        guard_left_corner:
+          Value: true
+        guard_right_corner:
+          Value: true
         left_grasp:
           Value: true
         left_lwr_1_link:
@@ -82,6 +86,8 @@ Visualization Manager:
         left_lwr_base_link:
           Value: true
         left_lwr_markers:
+          Value: true
+        left_palm:
           Value: true
         mocap_world:
           Value: true
@@ -107,14 +113,50 @@ Visualization Manager:
           Value: true
         right_lwr_markers:
           Value: true
-      Marker Scale: 0.5
+        right_palm:
+          Value: true
+      Marker Scale: 0.3
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
         mocap_world:
-          {}
+          guard:
+            guard_left_corner:
+              {}
+            guard_right_corner:
+              {}
+            left_grasp:
+              {}
+            right_grasp:
+              {}
+          guard_desired_pose:
+            {}
+          left_lwr_markers:
+            left_lwr_base:
+              left_lwr_base_link:
+                left_lwr_1_link:
+                  left_lwr_2_link:
+                    left_lwr_3_link:
+                      left_lwr_4_link:
+                        left_lwr_5_link:
+                          left_lwr_6_link:
+                            left_lwr_7_link:
+                              left_palm:
+                                {}
+          right_lwr_markers:
+            right_lwr_base:
+              right_lwr_base_link:
+                right_lwr_1_link:
+                  right_lwr_2_link:
+                    right_lwr_3_link:
+                      right_lwr_4_link:
+                        right_lwr_5_link:
+                          right_lwr_6_link:
+                            right_lwr_7_link:
+                              right_palm:
+                                {}
       Update Interval: 0
       Value: true
     - Alpha: 0.5
@@ -261,7 +303,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.87753
+      Distance: 1.72564
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -273,10 +315,10 @@ Visualization Manager:
         Z: 0.636132
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.840399
+      Pitch: 0.615399
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.24357
+      Yaw: 3.63858
     Saved: ~
 Window Geometry:
   Displays:

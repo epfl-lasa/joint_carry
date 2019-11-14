@@ -79,8 +79,8 @@ bool JointCarryController::Init() {
 	pub_right_robot_command_orient_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_right_robot_command_orient_, 1);
 	pub_left_robot_command_orient_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_left_robot_command_orient_, 1);
 
-	pub_right_robot_command_wrench_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_right_robot_command_wrench_, 1);
-	pub_left_robot_command_wrench_ = nh_.advertise<geometry_msgs::Quaternion>(topic_name_left_robot_command_wrench_, 1);
+	pub_right_robot_command_wrench_ = nh_.advertise<geometry_msgs::Wrench>(topic_name_right_robot_command_wrench_, 1);
+	pub_left_robot_command_wrench_ = nh_.advertise<geometry_msgs::Wrench>(topic_name_left_robot_command_wrench_, 1);
 
 	// pub_desired_twist_ = nh_.advertise<geometry_msgs::Twist>(output_topic_name_, 1);
 
@@ -220,6 +220,20 @@ void JointCarryController::Run() {
 
 
 
+		if (1) {
+
+
+			ROS_INFO_STREAM_THROTTLE(2, "---------------------------------------------\n" <<
+			                         "Distance to right grasp point: " << right_palm_guard_distance_ << " (" <<  right_hand_closure_.closure[0] << ")" << "\n" <<
+			                         "Distance to left grasp point:  " <<   left_palm_guard_distance_ << " (" <<  left_hand_closure_.closure[0] << ")"  << "\n" <<
+			                         "DS vel for guard center: " << guard_desired_vel_.transpose()     );
+
+
+
+		}
+
+
+
 		ros::spinOnce();
 		loop_rate_.sleep();
 	}
@@ -272,8 +286,8 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 		left_lwr_vel *= (vel_limit / left_lwr_vel.norm() );
 	}
 
-	ROS_INFO_STREAM_THROTTLE(2, "Computed velocities for the right lwr " << right_lwr_vel.transpose() );
-	ROS_INFO_STREAM_THROTTLE(2, "Computed velocities for the left lwr  " << left_lwr_vel.transpose() );
+	ROS_INFO_STREAM_THROTTLE(2, "DS vel for right lwr: " << right_lwr_vel.transpose() );
+	ROS_INFO_STREAM_THROTTLE(2, "DS vel for left lwr:  " << left_lwr_vel.transpose() );
 
 
 	// sending the DS vels to the robot
@@ -325,12 +339,9 @@ void JointCarryController::UpdateRightQBHandControl() {
 
 	update_right_grasp_point();
 
-	right_hand_closure_.closure.clear();
-
-	// replaced by right_palm_guard_distance_ (less sensetive to orientation)
-	// double distance_to_goal = (right_robot_position_ - right_grasp_pose_.head(3)).norm();
-
 	if (!flag_right_grasp_compelete_) {
+
+		right_hand_closure_.closure.clear();
 
 		if (right_palm_guard_distance_ > hand_grasp_complete_dist_) {
 			right_hand_closure_.closure.push_back(distance_to_colusre(right_palm_guard_distance_));
@@ -340,18 +351,22 @@ void JointCarryController::UpdateRightQBHandControl() {
 			flag_right_grasp_compelete_ = true;
 		}
 
-		ROS_INFO_STREAM_THROTTLE(1, "Distance to right grasp point: " << right_palm_guard_distance_
-		                         << " hand_clousre: " << right_hand_closure_.closure[0]);
+		pub_right_hand_command_.publish(right_hand_closure_);
+
+		// ROS_INFO_STREAM_THROTTLE(2, "Distance to right grasp point: " << right_palm_guard_distance_
+		//                          << " hand_clousre: " << right_hand_closure_.closure[0]);
 
 	}
 	else if (right_palm_guard_distance_ > 2 * hand_grasp_trigger_dist_) {
 
-		ROS_WARN("object realsed from the right hand.");
+		right_hand_closure_.closure.clear();
 		right_hand_closure_.closure.push_back(0);
+		pub_right_hand_command_.publish(right_hand_closure_);
+
 		flag_right_grasp_compelete_ = false;
+		ROS_WARN("object realsed from the right hand.");
 	}
 
-	pub_right_hand_command_.publish(right_hand_closure_);
 
 
 }
@@ -359,12 +374,10 @@ void JointCarryController::UpdateRightQBHandControl() {
 void JointCarryController::UpdateLeftQBHandControl() {
 
 	update_left_grasp_point();
-	left_hand_closure_.closure.clear();
-
-	// replaced by left_palm_guard_distance_ (less sensetive to orientation)
-	// double distance_to_goal = (left_robot_position_ - left_grasp_pose_.head(3)).norm();
 
 	if (!flag_left_grasp_compelete_) {
+
+		left_hand_closure_.closure.clear();
 
 		if (left_palm_guard_distance_ > hand_grasp_complete_dist_) {
 			left_hand_closure_.closure.push_back(distance_to_colusre(left_palm_guard_distance_));
@@ -374,16 +387,22 @@ void JointCarryController::UpdateLeftQBHandControl() {
 			flag_left_grasp_compelete_ = true;
 		}
 
-		ROS_INFO_STREAM_THROTTLE(1, "Distance to left grasp point: " << left_palm_guard_distance_
-		                         << " hand_clousre: " << left_hand_closure_.closure[0]);
+		pub_left_hand_command_.publish(left_hand_closure_);
+
+		// ROS_INFO_STREAM_THROTTLE(2, "Distance to left grasp point: " << left_palm_guard_distance_
+		//                          << " hand_clousre: " << left_hand_closure_.closure[0]);
 
 	}
 	else if (left_palm_guard_distance_ > 2 * hand_grasp_trigger_dist_) {
-		ROS_WARN("object realsed from the left hand.");
+
+		left_hand_closure_.closure.clear();
+
 		left_hand_closure_.closure.push_back(0);
+		pub_left_hand_command_.publish(left_hand_closure_);
+
 		flag_left_grasp_compelete_ = false;
+		ROS_WARN("object realsed from the left hand.");
 	}
-	pub_left_hand_command_.publish(left_hand_closure_);
 
 }
 
@@ -596,7 +615,7 @@ bool JointCarryController::UpdateGuardCenterPose()
 		guard_to_right_ee_in_world_(1) = vec_tmp.getY();
 		guard_to_right_ee_in_world_(2) = vec_tmp.getZ();
 
-		ROS_INFO_STREAM_THROTTLE(2, "guard_to_right_ee_in_world_:" << guard_to_right_ee_in_world_.transpose());
+		// ROS_INFO_STREAM_THROTTLE(2, "guard_to_right_ee_in_world_:" << guard_to_right_ee_in_world_.transpose());
 	}
 	catch (tf::TransformException ex) {
 		ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: from guard to right_lwr_7_link" );
@@ -613,7 +632,7 @@ bool JointCarryController::UpdateGuardCenterPose()
 		guard_to_left_ee_in_world_(1) = vec_tmp.getY();
 		guard_to_left_ee_in_world_(2) = vec_tmp.getZ();
 
-		ROS_INFO_STREAM_THROTTLE(2, "guard_to_left_ee_in_world_:" << guard_to_left_ee_in_world_.transpose());
+		// ROS_INFO_STREAM_THROTTLE(2, "guard_to_left_ee_in_world_:" << guard_to_left_ee_in_world_.transpose());
 
 	}
 	catch (tf::TransformException ex) {
