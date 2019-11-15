@@ -2,3 +2,6 @@ hand_max_closure: 19000
 hand_grasp_trigger_dist: 0.04 # distance to the target goal which triggers the closure of the hand
 hand_grasp_complete_dist: 0.03 # distance at which the grasp is complete (reaches qb_hand_max_closure)
 guard_weight: 16 # w = m*g, this will be used to cancel the weight of the guard 
+guard_ori_damp: 2 # this should be a positive double
+filter_time_constant: 0.3 # should be more than 5*dt where dt is the frequency of the node
+

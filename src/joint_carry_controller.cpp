@@ -26,7 +26,9 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
         double hand_max_closure,
         double hand_grasp_trigger_dist,
         double hand_grasp_complete_dist,
-        double guard_weight)
+        double guard_weight,
+        double guard_ori_damp,
+        double filter_time_constant)
 
 	: nh_(n),
 	  loop_rate_(frequency),
@@ -51,6 +53,8 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 	  hand_grasp_trigger_dist_(hand_grasp_trigger_dist),
 	  hand_grasp_complete_dist_(hand_grasp_complete_dist),
 	  guard_weight_(guard_weight),
+	  guard_ori_damp_(guard_ori_damp),
+	  filter_time_constant_(filter_time_constant),
 	  dt_(1 / frequency)
 	  // scaling_factor_(1),
 {
@@ -112,6 +116,8 @@ bool JointCarryController::Init() {
 
 
 
+
+
 	// float32 closure[1];
 	// closure[0] = 19000.0;
 
@@ -128,6 +134,14 @@ bool JointCarryController::Init() {
 
 	right_ds_vel_.setZero();
 	left_ds_vel_.setZero();
+
+	guard_vel_.setZero();
+	guard_last_position_.setZero();
+	time_guard_last_position_ = ros::Time::now();
+
+	filter_ratio_ = dt_ / (filter_time_constant_ + dt_);
+
+
 	guard_desired_vel_.setZero();
 
 
@@ -150,9 +164,18 @@ bool JointCarryController::Init() {
 	right_lwr_wrench_msg_.torque.z = 0;
 
 
+	if (guard_ori_damp_ < 0) {
+		ROS_WARN_STREAM("The dampinng gain for the guard is set to a negative value (" << guard_ori_damp_ << ") " <<
+		                "Setting it to a default value (2)" );
+		guard_ori_damp_ = 2;
+	}
+
+
 
 	if (nh_.ok()) { // Wait for poses being published
 		ros::spinOnce();
+		// starting the clock
+		ros::Time::now();
 
 		ROS_INFO_STREAM("Waiting 3 second for QBhands nodes");
 		ros::Duration(3).sleep();
@@ -188,10 +211,14 @@ bool JointCarryController::Init() {
 
 void JointCarryController::Run() {
 
+
+
 	while (nh_.ok()) {
 
 
 		// ROS_WARN_STREAM_THROTTLE(1, "flag: " << flag_right_grasp_compelete_ << " closure: " << right_hand_closure_.closure[0]);
+		UpdateGuardCenterPose();
+
 
 		UpdateRightQBHandControl();
 		UpdateLeftQBHandControl();
@@ -243,7 +270,7 @@ void JointCarryController::Run() {
 void JointCarryController::ComputeGuardDesiredDynamics() {
 
 
-	UpdateGuardCenterPose();
+	 // UpdateGuardCenterPose(); // doing this int main loop
 
 	// for now let's just assume we want to keep the guard balanced
 
@@ -266,7 +293,7 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 	Eigen::AngleAxisd err_axang(q_err);
 
 
-	Vector3d guard_desired_angular_vel = -5 * err_axang.axis() * err_axang.angle();
+	Vector3d guard_desired_angular_vel = -1 * guard_ori_damp_ * err_axang.axis() * err_axang.angle();
 	// ROS_INFO_STREAM_THROTTLE(2, "Desired angular velocity for the guard center " << guard_desired_angular_vel );
 
 
@@ -597,6 +624,23 @@ bool JointCarryController::UpdateGuardCenterPose()
 		pose_msg.orientation.w = guard_pose_(6);
 
 		pub_guard_pose_.publish(pose_msg);
+
+		ros::Time time_now = ros::Time::now();
+		double time_diff = (time_now - time_guard_last_position_).toSec();
+
+
+		guard_vel_ = (1 - filter_ratio_) * guard_vel_ + filter_ratio_ * (guard_pose_.head(3) - guard_last_position_) / time_diff;
+
+		time_guard_last_position_ = ros::Time::now();
+		guard_last_position_ = guard_pose_.head(3);
+
+
+		geometry_msgs::Twist msg_guard_twist;
+		msg_guard_twist.linear.x = guard_vel_(0);
+		msg_guard_twist.linear.y = guard_vel_(1);
+		msg_guard_twist.linear.z = guard_vel_(2);
+		pub_guard_twist_.publish(msg_guard_twist);
+
 	}
 	catch (tf::TransformException ex) {
 		ROS_WARN_STREAM_THROTTLE(1, "Waiting for TF: from mocap_world to guard" );
@@ -797,7 +841,7 @@ Eigen::Quaterniond JointCarryController::clamp_quat(Eigen::Quaterniond qd, Eigen
 
 	Eigen::Quaterniond diff_clamped(diff_axang);
 
-	qd = diff_clamped * right_robot_orientation_;
+	qd = diff_clamped * qr;
 	qd.normalize();
 
 	return qd;

@@ -169,6 +169,12 @@ private:
 	tf::TransformListener tf_listener_;
 
 	Vector7d guard_pose_; // pose of the guard in the world frame
+	Vector3d guard_vel_; // in the world frame as well
+
+	ros::Time time_guard_last_position_;
+	Vector3d guard_last_position_;
+
+
 	Vector7d right_grasp_pose_;
 	Vector7d left_grasp_pose_;
 
@@ -177,6 +183,7 @@ private:
 
 	Quaterniond guard_desired_orientation_;
 	Vector3d guard_desired_velocity_;
+
 
 
 	Vector3d right_ds_vel_;
@@ -198,6 +205,10 @@ private:
 	geometry_msgs::Wrench left_lwr_wrench_msg_;
 	geometry_msgs::Wrench right_lwr_wrench_msg_;
 
+	double guard_ori_damp_;
+
+	double filter_time_constant_;
+	double filter_ratio_;
 
 
 public:
@@ -223,7 +234,9 @@ public:
 	                     double hand_max_closure,
 	                     double hand_grasp_trigger_dist,
 	                     double hand_grasp_complete_dist,
-	                     double guard_weight);
+	                     double guard_weight,
+	                     double guard_ori_damp,
+	                     double filter_time_constant);
 
 	bool Init();
 

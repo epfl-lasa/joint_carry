@@ -46,6 +46,10 @@ int main(int argc, char **argv)
   double hand_grasp_complete_dist;
 
   double guard_weight;
+  double guard_ori_damp;
+
+
+  double filter_time_constant;
 
 
 
@@ -156,6 +160,16 @@ int main(int argc, char **argv)
     // return -1;
   }
 
+  if (!nh.getParam("guard_ori_damp", guard_ori_damp))   {
+    ROS_ERROR("Couldn't retrieve the the damping gain for the guard orientation. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("filter_time_constant", filter_time_constant))   {
+    ROS_ERROR("Couldn't retrieve the the time constant for the filter. ");
+    // return -1;
+  }
+
 
   // if (!nh.getParam("K", K_gmm))   {
   //   ROS_ERROR("Couldn't retrieve the number of guassians. ");
@@ -192,7 +206,9 @@ int main(int argc, char **argv)
       hand_max_closure,
       hand_grasp_trigger_dist,
       hand_grasp_complete_dist,
-      guard_weight);
+      guard_weight,
+      guard_ori_damp,
+      filter_time_constant);
   if (!joint_carry_controller.Init()) {
     return -1;
   }
