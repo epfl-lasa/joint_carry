@@ -16,6 +16,8 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
         std::string topic_name_left_robot_command_orient,
         std::string topic_name_right_robot_command_wrench,
         std::string topic_name_left_robot_command_wrench,
+        std::string topic_name_right_robot_command_damping,
+        std::string topic_name_left_robot_command_damping,
         std::string topic_name_guard_pose,
         std::string topic_name_guard_twist,
         std::string topic_name_right_grasp_pose,
@@ -42,6 +44,8 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 	  topic_name_left_robot_command_orient_(topic_name_left_robot_command_orient),
 	  topic_name_right_robot_command_wrench_(topic_name_right_robot_command_wrench),
 	  topic_name_left_robot_command_wrench_(topic_name_left_robot_command_wrench),
+	  topic_name_right_robot_command_damping_(topic_name_right_robot_command_damping),
+	  topic_name_left_robot_command_damping_(topic_name_left_robot_command_damping),
 	  topic_name_guard_pose_(topic_name_guard_pose),
 	  topic_name_guard_twist_(topic_name_guard_twist),
 	  topic_name_right_grasp_pose_(topic_name_right_grasp_pose),
@@ -85,6 +89,11 @@ bool JointCarryController::Init() {
 
 	pub_right_robot_command_wrench_ = nh_.advertise<geometry_msgs::Wrench>(topic_name_right_robot_command_wrench_, 1);
 	pub_left_robot_command_wrench_ = nh_.advertise<geometry_msgs::Wrench>(topic_name_left_robot_command_wrench_, 1);
+
+	pub_right_robot_command_damping_ = nh_.advertise<std_msgs::Float64MultiArray>(topic_name_right_robot_command_damping_, 1);
+	pub_left_robot_command_damping_ = nh_.advertise<std_msgs::Float64MultiArray>(topic_name_left_robot_command_damping_, 1);
+
+
 
 	// pub_desired_twist_ = nh_.advertise<geometry_msgs::Twist>(output_topic_name_, 1);
 
@@ -270,7 +279,7 @@ void JointCarryController::Run() {
 void JointCarryController::ComputeGuardDesiredDynamics() {
 
 
-	 // UpdateGuardCenterPose(); // doing this int main loop
+	// UpdateGuardCenterPose(); // doing this int main loop
 
 	// for now let's just assume we want to keep the guard balanced
 
@@ -498,6 +507,21 @@ void JointCarryController::LeftLwrReachToGrasp() {
 	twist_msg.angular.z = 0;
 
 	pub_left_robot_command_vel_.publish(twist_msg);
+
+}
+
+
+void JointCarryController::CommandDamping(double Dx, double Dy, double Dz) {
+
+	std_msgs::Float64MultiArray msg;
+	msg.data[0] = Dx;
+	msg.data[1] = Dy;
+	msg.data[2] = Dz;
+
+
+	pub_right_robot_command_damping_.publish(msg);
+	pub_left_robot_command_damping_.publish(msg);
+
 
 }
 

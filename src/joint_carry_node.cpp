@@ -29,6 +29,9 @@ int main(int argc, char **argv)
   std::string topic_name_right_robot_command_wrench;
   std::string topic_name_left_robot_command_wrench;
 
+  std::string topic_name_right_robot_command_damping;
+  std::string topic_name_left_robot_command_damping;
+
   std::string topic_name_guard_pose;
   std::string topic_name_guard_twist;
 
@@ -101,6 +104,16 @@ int main(int argc, char **argv)
 
   if (!nh.getParam("topic_name_left_robot_command_wrench", topic_name_left_robot_command_wrench))   {
     ROS_ERROR("Couldn't retrieve the topic name for the left robot wrench command. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_right_robot_command_damping", topic_name_right_robot_command_damping))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the right robot damping command. ");
+    // return -1;
+  }
+
+  if (!nh.getParam("topic_name_left_robot_command_damping", topic_name_left_robot_command_damping))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the left robot damping command. ");
     // return -1;
   }
 
@@ -196,6 +209,8 @@ int main(int argc, char **argv)
       topic_name_left_robot_command_orient,
       topic_name_right_robot_command_wrench,
       topic_name_left_robot_command_wrench,
+      topic_name_right_robot_command_damping,
+      topic_name_left_robot_command_damping,
       topic_name_guard_pose,
       topic_name_guard_twist,
       topic_name_right_grasp_pose,

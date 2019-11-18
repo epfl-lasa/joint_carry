@@ -139,6 +139,10 @@
     <param name="topic_name_right_robot_command_wrench" value="/right_lwr/joint_controllers/passive_ds_command_wrench"/>
     <param name="topic_name_left_robot_command_wrench" value="/left_lwr/joint_controllers/passive_ds_command_wrench"/>
 
+    <param name="topic_name_right_robot_command_damping" value="/right_lwr/joint_controllers/passive_ds_linear_damping"/>
+    <param name="topic_name_left_robot_command_damping" value="/left_lwr/joint_controllers/passive_ds_linear_damping"/>
+
+
     <!-- dynamical system for reaching to grasp -->
     <param name="topic_name_right_ds_vel" value="/right/ds_desired_velocity"/>
     <param name="topic_name_left_ds_vel" value="/left/ds_desired_velocity"/>

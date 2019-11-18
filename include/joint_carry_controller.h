@@ -4,6 +4,7 @@
 #include "ros/ros.h"
 #include "geometry_msgs/Pose.h"
 #include <geometry_msgs/Wrench.h>
+#include "std_msgs/Float64MultiArray.h"
 
 // #include "geometry_msgs/Twist.h"
 //#include "geometry_msgs/TwistStamped.h"
@@ -93,6 +94,9 @@ private:
 	ros::Publisher pub_right_robot_command_wrench_;
 	ros::Publisher pub_left_robot_command_wrench_;
 
+	ros::Publisher pub_right_robot_command_damping_;
+	ros::Publisher pub_left_robot_command_damping_;
+
 	ros::Publisher pub_guard_pose_;
 	ros::Publisher pub_guard_twist_;
 
@@ -119,6 +123,8 @@ private:
 	std::string topic_name_left_robot_command_orient_;
 	std::string topic_name_right_robot_command_wrench_;
 	std::string topic_name_left_robot_command_wrench_;
+	std::string topic_name_right_robot_command_damping_;
+	std::string topic_name_left_robot_command_damping_;
 
 	std::string topic_name_right_ds_vel_;
 	std::string topic_name_left_ds_vel_;
@@ -223,7 +229,9 @@ public:
 	                     std::string topic_name_right_robot_command_orient,
 	                     std::string topic_name_left_robot_command_orient,
 	                     std::string topic_name_right_robot_command_wrench,
-	                     std::string topic_name_left_robot_command_wrench,
+	                     std::string topic_name_left_robot_command_wrench,	                     
+	                     std::string topic_name_right_robot_command_damping,
+	                     std::string topic_name_left_robot_command_damping,
 	                     std::string topic_name_guard_pose,
 	                     std::string topic_name_guard_twist,
 	                     std::string topic_name_right_grasp_pose,
@@ -280,6 +288,9 @@ private:
 
 
 	Eigen::Quaterniond clamp_quat(Eigen::Quaterniond qd, Eigen::Quaterniond qr , double max_angle );
+
+	void CommandDamping(double Dx, double Dy, double Dz);
+
 
 
 

@@ -28,7 +28,7 @@
     <param name="target_topic_name" value="/main_node/right_grasp_pose"/>
     <param name="output_topic_name" value="/right/ds_desired_velocity"/>
     <param name="output_filtered_topic_name" value="/right/ds_filtered_desired_velocity"/>
-    <rosparam command="load" file="$(find joint_carry)/config/simple_ds.yaml"/>
+    <rosparam command="load" file="$(find joint_carry)/config/DSparam/reach_ds.yaml"/>
     <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
 
 </group>
@@ -49,7 +49,7 @@
     <param name="target_topic_name" value="/main_node/left_grasp_pose"/>
     <param name="output_topic_name" value="/left/ds_desired_velocity"/>
     <param name="output_filtered_topic_name" value="/left/ds_filtered_desired_velocity"/>
-    <rosparam command="load" file="$(find joint_carry)/config/simple_ds.yaml"/>
+    <rosparam command="load" file="$(find joint_carry)/config/DSparam/reach_ds.yaml"/>
     <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
 
 </group>
@@ -62,7 +62,7 @@
         <param name="output_topic_name" value="/Task1/desired_velocity"/>
         <param name="target_topic_name" value="/Task1/ds_target"/>
         <param name="output_filtered_topic_name" value="/Task1/filter/desired_velocity"/>
-        <rosparam command="load" file="$(find ds_motion_generator)/config/guard_lift.yml"/>
+        <rosparam command="load" file="$(find joint_carry)/config/DSparam/guard_lift.yml"/>
         <node name="ds_node" pkg="ds_motion_generator" type="active_motionGenerator_node" output="screen"/>
       </group>
 
@@ -96,6 +96,9 @@
 
     <param name="topic_name_right_robot_command_wrench" value="/right_lwr/joint_controllers/passive_ds_command_wrench"/>
     <param name="topic_name_left_robot_command_wrench" value="/left_lwr/joint_controllers/passive_ds_command_wrench"/>
+
+    <param name="topic_name_right_robot_command_damping" value="/right_lwr/joint_controllers/passive_ds_linear_damping"/>
+    <param name="topic_name_left_robot_command_damping" value="/left_lwr/joint_controllers/passive_ds_linear_damping"/>
 
     <!-- dynamical system for reaching to grasp -->
     <param name="topic_name_right_ds_vel" value="/right/ds_desired_velocity"/>
