@@ -3,25 +3,21 @@
 
 #include "ros/ros.h"
 #include "geometry_msgs/Pose.h"
-#include <geometry_msgs/Wrench.h>
+
+#include "geometry_msgs/Twist.h"
+#include "geometry_msgs/TwistStamped.h"
+
+#include "geometry_msgs/Wrench.h"
+#include "geometry_msgs/WrenchStamped.h"
+
+#include "std_msgs/Float32.h"
 #include "std_msgs/Float64MultiArray.h"
 
-// #include "geometry_msgs/Twist.h"
-//#include "geometry_msgs/TwistStamped.h"
-// #include "geometry_msgs/PointStamped.h"
 
 #include <vector>
 
-
-// #include <qb_interface/cubeRef.h>
 #include <qb_interface/handRef.h>
 
-// #include <qb_interface/cubeEq_Preset.h>
-// #include <qb_interface/cubePos.h>
-// #include <qb_interface/handPos.h>
-
-// #include <qb_interface/cubeCurrent.h>
-// #include <qb_interface/handCurrent.h>
 
 
 #include <tf/transform_listener.h>
@@ -106,7 +102,12 @@ private:
 	ros::Subscriber sub_right_ds_vel_;
 	ros::Subscriber sub_left_ds_vel_;
 
+	ros::Subscriber sub_right_ft_sensor_;
+	ros::Subscriber sub_left_ft_sensor_;
+
 	ros::Subscriber sub_guard_desired_velocity_;
+
+	ros::Publisher pub_guard_disturbance_;
 
 	// ros::Publisher pub_desired_twist_;
 	// ros::Publisher pub_desired_twist_filtered_;
@@ -125,6 +126,8 @@ private:
 	std::string topic_name_left_robot_command_wrench_;
 	std::string topic_name_right_robot_command_damping_;
 	std::string topic_name_left_robot_command_damping_;
+	std::string topic_name_right_ft_sensor_;
+	std::string topic_name_left_ft_sensor_;
 
 	std::string topic_name_right_ds_vel_;
 	std::string topic_name_left_ds_vel_;
@@ -216,6 +219,14 @@ private:
 	double filter_time_constant_;
 	double filter_ratio_;
 
+	Vector3d right_ft_force_;
+	Vector3d left_ft_force_;
+
+	Vector3d right_ft_force_last_;
+	Vector3d left_ft_force_last_;
+
+	double guardPowHighFreq_;
+
 
 public:
 	JointCarryController(ros::NodeHandle &n,
@@ -229,9 +240,11 @@ public:
 	                     std::string topic_name_right_robot_command_orient,
 	                     std::string topic_name_left_robot_command_orient,
 	                     std::string topic_name_right_robot_command_wrench,
-	                     std::string topic_name_left_robot_command_wrench,	                     
+	                     std::string topic_name_left_robot_command_wrench,
 	                     std::string topic_name_right_robot_command_damping,
 	                     std::string topic_name_left_robot_command_damping,
+	                     std::string topic_name_right_ft_sensor,
+	                     std::string topic_name_left_ft_sensor,
 	                     std::string topic_name_guard_pose,
 	                     std::string topic_name_guard_twist,
 	                     std::string topic_name_right_grasp_pose,
@@ -290,6 +303,13 @@ private:
 	Eigen::Quaterniond clamp_quat(Eigen::Quaterniond qd, Eigen::Quaterniond qr , double max_angle );
 
 	void CommandDamping(double Dx, double Dy, double Dz);
+
+
+
+	void UpdateRightFTsensor(const geometry_msgs::WrenchStamped::ConstPtr& msg);
+	void UpdateLeftFTsensor(const geometry_msgs::WrenchStamped::ConstPtr& msg);
+
+	void ComputeGuardDisturbance();
 
 
 

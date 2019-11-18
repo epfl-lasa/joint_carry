@@ -18,6 +18,8 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
         std::string topic_name_left_robot_command_wrench,
         std::string topic_name_right_robot_command_damping,
         std::string topic_name_left_robot_command_damping,
+        std::string topic_name_right_ft_sensor,
+        std::string topic_name_left_ft_sensor,
         std::string topic_name_guard_pose,
         std::string topic_name_guard_twist,
         std::string topic_name_right_grasp_pose,
@@ -46,6 +48,8 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 	  topic_name_left_robot_command_wrench_(topic_name_left_robot_command_wrench),
 	  topic_name_right_robot_command_damping_(topic_name_right_robot_command_damping),
 	  topic_name_left_robot_command_damping_(topic_name_left_robot_command_damping),
+	  topic_name_right_ft_sensor_(topic_name_right_ft_sensor),
+	  topic_name_left_ft_sensor_(topic_name_left_ft_sensor),
 	  topic_name_guard_pose_(topic_name_guard_pose),
 	  topic_name_guard_twist_(topic_name_guard_twist),
 	  topic_name_right_grasp_pose_(topic_name_right_grasp_pose),
@@ -71,13 +75,20 @@ bool JointCarryController::Init() {
 
 
 	// topics to communicate with the two LWRs
-	sub_right_robot_pose_ = nh_.subscribe(topic_name_right_robot_pose_ , 1000,
+	sub_right_robot_pose_ = nh_.subscribe(topic_name_right_robot_pose_ , 1,
 	                                      &JointCarryController::UpdateRightRobotEEPose,
 	                                      this, ros::TransportHints().reliable().tcpNoDelay());
-	sub_left_robot_pose_ = nh_.subscribe(topic_name_left_robot_pose_ , 1000,
+	sub_left_robot_pose_ = nh_.subscribe(topic_name_left_robot_pose_ , 1,
 	                                     &JointCarryController::UpdateLeftRobotEEPose,
 	                                     this, ros::TransportHints().reliable().tcpNoDelay());
 
+
+	sub_right_ft_sensor_ = nh_.subscribe(topic_name_right_ft_sensor_ , 1,
+	                                     &JointCarryController::UpdateRightFTsensor,
+	                                     this, ros::TransportHints().reliable().tcpNoDelay());
+	sub_left_ft_sensor_ = nh_.subscribe(topic_name_left_ft_sensor_ , 1,
+	                                    &JointCarryController::UpdateLeftFTsensor,
+	                                    this, ros::TransportHints().reliable().tcpNoDelay());
 
 
 
@@ -124,6 +135,10 @@ bool JointCarryController::Init() {
 
 
 
+	pub_guard_disturbance_ = nh_.advertise<std_msgs::Float32>("guard_disturbance", 1);
+
+
+
 
 
 
@@ -143,6 +158,14 @@ bool JointCarryController::Init() {
 
 	right_ds_vel_.setZero();
 	left_ds_vel_.setZero();
+
+	right_ft_force_.setZero();
+	left_ft_force_.setZero();
+
+	right_ft_force_last_.setZero();
+	left_ft_force_last_.setZero();
+
+	guardPowHighFreq_ = 0;
 
 	guard_vel_.setZero();
 	guard_last_position_.setZero();
@@ -268,6 +291,7 @@ void JointCarryController::Run() {
 
 		}
 
+		ComputeGuardDisturbance();
 
 
 		ros::spinOnce();
@@ -602,6 +626,46 @@ void JointCarryController::UpdateLeftRobotEEPose(const geometry_msgs::Pose::Cons
 
 }
 
+
+void JointCarryController::UpdateRightFTsensor(const geometry_msgs::WrenchStamped::ConstPtr& msg) {
+
+	right_ft_force_last_ = right_ft_force_;
+
+	right_ft_force_(0) = msg->wrench.force.x;
+	right_ft_force_(1) = msg->wrench.force.x;
+	right_ft_force_(2) = msg->wrench.force.x;
+
+
+
+}
+
+
+void JointCarryController::UpdateLeftFTsensor(const geometry_msgs::WrenchStamped::ConstPtr& msg) {
+
+	left_ft_force_last_ = left_ft_force_;
+
+	left_ft_force_(0) = msg->wrench.force.x;
+	left_ft_force_(1) = msg->wrench.force.x;
+	left_ft_force_(2) = msg->wrench.force.x;
+
+}
+
+
+void JointCarryController::ComputeGuardDisturbance() {
+	double diff_norm = (right_ft_force_ - right_ft_force_last_).squaredNorm() + (left_ft_force_ - left_ft_force_last_).squaredNorm();
+
+	guardPowHighFreq_ = 0.9 * guardPowHighFreq_ + 0.1 * diff_norm;
+
+	guardPowHighFreq_ = (guardPowHighFreq_ > 10) ? 10 : guardPowHighFreq_;
+
+	// ROS_INFO_STREAM_THROTTLE(1, "High freq : " << guardPowHighFreq_);
+
+	std_msgs::Float32 msg;
+	msg.header.stamp = ros::Time::now();
+	msg.data = guardPowHighFreq_;
+	pub_guard_disturbance_.publish(msg);
+
+}
 
 // ########################################################
 // ################ Handles TFs ###########################
