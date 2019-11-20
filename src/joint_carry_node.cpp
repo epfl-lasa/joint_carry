@@ -5,7 +5,7 @@
 
 int main(int argc, char **argv)
 {
-  ros::init(argc, argv, "joint_carry_node");
+  ros::init(argc, argv, "joint_carry_node" , ros::init_options::NoSigintHandler);
 
   ros::NodeHandle nh;
   double frequency = 300.0;
@@ -244,7 +244,9 @@ int main(int argc, char **argv)
   }
   else {
     joint_carry_controller.Run();
+    std::cout << "Joint_carry_node stopped running." << std::endl;
   }
+
 
 
   return 0;

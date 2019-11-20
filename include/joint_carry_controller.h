@@ -1,6 +1,8 @@
 #ifndef __JOINT_CONTROLLER_H__
 #define __JOINT_CONTROLLER_H__
 
+#include <signal.h>
+
 #include "ros/ros.h"
 #include "geometry_msgs/Pose.h"
 
@@ -50,6 +52,8 @@ class JointCarryController {
 
 
 private:
+
+	static JointCarryController* thisNodePtr;
 
 	// DS variables
 
@@ -108,6 +112,7 @@ private:
 	ros::Subscriber sub_guard_desired_velocity_;
 
 	ros::Publisher pub_guard_disturbance_;
+	ros::Publisher pub_tank_disturbance_;
 
 	// ros::Publisher pub_desired_twist_;
 	// ros::Publisher pub_desired_twist_filtered_;
@@ -226,6 +231,13 @@ private:
 	Vector3d left_ft_force_last_;
 
 	double guardPowHighFreq_;
+	double tank_disturbance_;
+
+	ros::Time last_time_dist_;
+	bool flag_dist_occured_;
+
+
+	bool flagNodeStop_;
 
 
 public:
@@ -310,6 +322,11 @@ private:
 	void UpdateLeftFTsensor(const geometry_msgs::WrenchStamped::ConstPtr& msg);
 
 	void ComputeGuardDisturbance();
+
+	static void SigIntHandler(int sig);
+
+
+	void ShutDownController();
 
 
 

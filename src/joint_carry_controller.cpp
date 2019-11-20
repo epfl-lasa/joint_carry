@@ -1,6 +1,8 @@
 #include "joint_carry_controller.h"
 
 
+//create pointer to self for CTRL + C catching
+JointCarryController* JointCarryController::thisNodePtr = NULL;
 
 
 
@@ -73,6 +75,11 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 
 bool JointCarryController::Init() {
 
+	thisNodePtr = this;
+	flagNodeStop_ = false;
+	signal(SIGINT, JointCarryController::SigIntHandler);
+
+
 
 	// topics to communicate with the two LWRs
 	sub_right_robot_pose_ = nh_.subscribe(topic_name_right_robot_pose_ , 1,
@@ -136,6 +143,7 @@ bool JointCarryController::Init() {
 
 
 	pub_guard_disturbance_ = nh_.advertise<std_msgs::Float32>("guard_disturbance", 1);
+	pub_tank_disturbance_ = nh_.advertise<std_msgs::Float32>("tank_disturbance", 1);
 
 
 
@@ -166,12 +174,17 @@ bool JointCarryController::Init() {
 	left_ft_force_last_.setZero();
 
 	guardPowHighFreq_ = 0;
+	tank_disturbance_ = 0;
 
 	guard_vel_.setZero();
 	guard_last_position_.setZero();
 	time_guard_last_position_ = ros::Time::now();
 
 	filter_ratio_ = dt_ / (filter_time_constant_ + dt_);
+
+
+	flag_dist_occured_ = false;
+	last_time_dist_ = ros::Time::now();
 
 
 	guard_desired_vel_.setZero();
@@ -213,6 +226,11 @@ bool JointCarryController::Init() {
 		ros::Duration(3).sleep();
 		pub_right_hand_command_.publish(right_hand_closure_);
 		pub_left_hand_command_.publish(left_hand_closure_);
+
+		ROS_INFO_STREAM("Setting kuka damping to 200");
+		CommandDamping(200, 200, 200);
+
+
 		ros::spinOnce();
 		ros::Duration(1).sleep();
 
@@ -243,60 +261,45 @@ bool JointCarryController::Init() {
 
 void JointCarryController::Run() {
 
-
-
-	while (nh_.ok()) {
+	while (nh_.ok() && !flagNodeStop_) {
 
 
 		// ROS_WARN_STREAM_THROTTLE(1, "flag: " << flag_right_grasp_compelete_ << " closure: " << right_hand_closure_.closure[0]);
 		UpdateGuardCenterPose();
 
-
 		UpdateRightQBHandControl();
 		UpdateLeftQBHandControl();
-
 
 		UpdateLwrsOrientatinControl();
 
 
-
-
-
 		if (!flag_right_grasp_compelete_ || !flag_left_grasp_compelete_) {
-
 			RightLwrReachToGrasp();
 			LeftLwrReachToGrasp();
 		}
-		else
-		{
+		else {
 			ROS_INFO_STREAM_THROTTLE(2, "Control the guard dynamics");
 			ComputeGuardDesiredDynamics();
-
 		}
 
 
 		UpdateGuardWeightCancelation();
 
-
-
 		if (1) {
-
-
 			ROS_INFO_STREAM_THROTTLE(2, "---------------------------------------------\n" <<
 			                         "Distance to right grasp point: " << right_palm_guard_distance_ << " (" <<  right_hand_closure_.closure[0] << ")" << "\n" <<
 			                         "Distance to left grasp point:  " <<   left_palm_guard_distance_ << " (" <<  left_hand_closure_.closure[0] << ")"  << "\n" <<
 			                         "DS vel for guard center: " << guard_desired_vel_.transpose()     );
-
-
-
 		}
 
 		ComputeGuardDisturbance();
 
-
 		ros::spinOnce();
 		loop_rate_.sleep();
 	}
+
+	ShutDownController();
+
 }
 
 
@@ -326,17 +329,30 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 	Eigen::AngleAxisd err_axang(q_err);
 
 
-	Vector3d guard_desired_angular_vel = -1 * guard_ori_damp_ * err_axang.axis() * err_axang.angle();
+	// in case of a disturbance, we forget about the linear motion and only try to keep the guard balanced.
+	Vector3d guard_desired_angular_vel;
+	Vector3d right_lwr_vel;
+	Vector3d left_lwr_vel;
+
+	if (!flag_dist_occured_) {
+
+		Vector3d guard_desired_angular_vel = -1 * guard_ori_damp_ * err_axang.axis() * err_axang.angle();
+		right_lwr_vel = guard_desired_angular_vel.cross(guard_to_right_ee_in_world_) + guard_desired_vel_;
+		left_lwr_vel  = guard_desired_angular_vel.cross(guard_to_left_ee_in_world_) + guard_desired_vel_;
+
+	} else {
+
+		guard_desired_angular_vel = -2 * guard_ori_damp_ * err_axang.axis() * err_axang.angle();
+		right_lwr_vel = guard_desired_angular_vel.cross(guard_to_right_ee_in_world_);
+		left_lwr_vel  = guard_desired_angular_vel.cross(guard_to_left_ee_in_world_);
+
+	}
+
 	// ROS_INFO_STREAM_THROTTLE(2, "Desired angular velocity for the guard center " << guard_desired_angular_vel );
 
 
 
-	Vector3d right_lwr_vel = guard_desired_angular_vel.cross(guard_to_right_ee_in_world_) + guard_desired_vel_;
-	Vector3d left_lwr_vel  = guard_desired_angular_vel.cross(guard_to_left_ee_in_world_) + guard_desired_vel_;
-
-
-
-	double vel_limit = 0.12;
+	double vel_limit = 0.15;
 
 	if (right_lwr_vel.norm() > vel_limit) {
 		right_lwr_vel *= (vel_limit / right_lwr_vel.norm() );
@@ -507,12 +523,25 @@ void JointCarryController::RightLwrReachToGrasp() {
 
 	// sending the DS vels to the robot
 	geometry_msgs::Twist twist_msg;
-	twist_msg.linear.x = right_ds_vel_(0);
-	twist_msg.linear.y = right_ds_vel_(1);
-	twist_msg.linear.z = right_ds_vel_(2);
+
+	// might not be neccessary to assign zeroes
+	twist_msg.linear.x = 0;
+	twist_msg.linear.y = 0;
+	twist_msg.linear.z = 0;
 	twist_msg.angular.x = 0;
 	twist_msg.angular.y = 0;
 	twist_msg.angular.z = 0;
+
+
+	if (!flag_right_grasp_compelete_) {
+		twist_msg.linear.x = right_ds_vel_(0);
+		twist_msg.linear.y = right_ds_vel_(1);
+		twist_msg.linear.z = right_ds_vel_(2);
+	}
+
+
+
+
 
 	pub_right_robot_command_vel_.publish(twist_msg);
 
@@ -523,12 +552,21 @@ void JointCarryController::LeftLwrReachToGrasp() {
 
 	// sending the DS vels to the robot
 	geometry_msgs::Twist twist_msg;
-	twist_msg.linear.x = left_ds_vel_(0);
-	twist_msg.linear.y = left_ds_vel_(1);
-	twist_msg.linear.z = left_ds_vel_(2);
+
+	// might not be neccessary to assign zeroes
+	twist_msg.linear.x = 0;
+	twist_msg.linear.y = 0;
+	twist_msg.linear.z = 0;
 	twist_msg.angular.x = 0;
 	twist_msg.angular.y = 0;
 	twist_msg.angular.z = 0;
+
+	if (!flag_left_grasp_compelete_) {
+		twist_msg.linear.x = left_ds_vel_(0);
+		twist_msg.linear.y = left_ds_vel_(1);
+		twist_msg.linear.z = left_ds_vel_(2);
+	}
+
 
 	pub_left_robot_command_vel_.publish(twist_msg);
 
@@ -538,6 +576,7 @@ void JointCarryController::LeftLwrReachToGrasp() {
 void JointCarryController::CommandDamping(double Dx, double Dy, double Dz) {
 
 	std_msgs::Float64MultiArray msg;
+	msg.data.resize(3);
 	msg.data[0] = Dx;
 	msg.data[1] = Dy;
 	msg.data[2] = Dz;
@@ -654,16 +693,43 @@ void JointCarryController::UpdateLeftFTsensor(const geometry_msgs::WrenchStamped
 void JointCarryController::ComputeGuardDisturbance() {
 	double diff_norm = (right_ft_force_ - right_ft_force_last_).squaredNorm() + (left_ft_force_ - left_ft_force_last_).squaredNorm();
 
-	guardPowHighFreq_ = 0.9 * guardPowHighFreq_ + 0.1 * diff_norm;
+	guardPowHighFreq_ = 0.995 * guardPowHighFreq_ + 0.01 * diff_norm;
 
-	guardPowHighFreq_ = (guardPowHighFreq_ > 10) ? 10 : guardPowHighFreq_;
+	guardPowHighFreq_ = (guardPowHighFreq_ > 1) ? 1 : guardPowHighFreq_;
 
 	// ROS_INFO_STREAM_THROTTLE(1, "High freq : " << guardPowHighFreq_);
 
 	std_msgs::Float32 msg;
-	msg.header.stamp = ros::Time::now();
 	msg.data = guardPowHighFreq_;
 	pub_guard_disturbance_.publish(msg);
+
+
+	if (guardPowHighFreq_ > 0.5) {
+		tank_disturbance_ += dt_ * (guardPowHighFreq_ > 0.5);
+	}
+	else {
+		tank_disturbance_ = 0;
+	}
+
+	msg.data = tank_disturbance_;
+	pub_tank_disturbance_.publish(msg);
+
+	if (tank_disturbance_ > 2) {
+		ROS_WARN_STREAM_THROTTLE(1, "Detecting unsual force patterns !!!");
+		if (!flag_dist_occured_) {
+			flag_dist_occured_ = true;
+			CommandDamping(0, 0, 300);
+		}
+		last_time_dist_ = ros::Time::now();
+	}
+	else if (flag_dist_occured_ && (ros::Time::now() - last_time_dist_).toSec() > 10) {
+		ROS_WARN_STREAM_THROTTLE(1, "Unusal force patterns disappeared !!!");
+		flag_dist_occured_ = false;
+		CommandDamping(200, 200, 200);
+
+	}
+
+
 
 }
 
@@ -937,6 +1003,46 @@ Eigen::Quaterniond JointCarryController::clamp_quat(Eigen::Quaterniond qd, Eigen
 }
 
 
+
+// ########################################################
+// ################ shutdown      #########################
+// ########################################################
+
+void JointCarryController::SigIntHandler(int sig) {
+
+	ROS_INFO("Catched the ctrl C");
+	thisNodePtr->flagNodeStop_ = true;
+
+}
+
+
+void JointCarryController::ShutDownController() {
+	ROS_INFO("Shutting down the controller");
+	ros::spinOnce();
+	loop_rate_.sleep();
+
+
+	// Openning the qbhands:
+
+	right_hand_closure_.closure.clear();
+	right_hand_closure_.closure.push_back(0.0);
+	pub_right_hand_command_.publish(right_hand_closure_);
+
+	left_hand_closure_.closure.clear();
+	left_hand_closure_.closure.push_back(0.0);
+	pub_left_hand_command_.publish(left_hand_closure_);
+	ros::spinOnce();
+	loop_rate_.sleep();
+
+
+	// Setting kuka gains to zero
+	CommandDamping(0, 0, 0);
+
+	ros::spinOnce();
+	loop_rate_.sleep();
+	ros::shutdown();
+
+}
 
 
 
