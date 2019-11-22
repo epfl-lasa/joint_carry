@@ -217,7 +217,7 @@ bool JointCarryController::Init() {
 
 
 
-	if (nh_.ok()) { // Wait for poses being published
+	if (nh_.ok() && !flagNodeStop_) { // Wait for poses being published
 		ros::spinOnce();
 		// starting the clock
 		ros::Time::now();
@@ -244,6 +244,8 @@ bool JointCarryController::Init() {
 	}
 	else {
 		ROS_ERROR("The ros node has a problem.");
+			ShutDownController();
+
 		return false;
 	}
 

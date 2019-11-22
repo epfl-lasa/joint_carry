@@ -11,10 +11,8 @@ Panels:
         - /RobotModel1
         - /RobotModel2
         - /PointStamped1
-        - /Path2
         - /PointStamped2
         - /PointStamped3
-        - /Path4
         - /PointStamped4
       Splitter Ratio: 0.5
     Tree Height: 745
@@ -451,7 +449,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.36611
+      Distance: 1.91409
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.06
         Stereo Focal Distance: 1
@@ -463,10 +461,10 @@ Visualization Manager:
         Z: 0.632438
       Name: Current View
       Near Clip Distance: 0.01
-      Pitch: 0.725398
+      Pitch: 0.0903986
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.04857
+      Yaw: 3.49856
     Saved: ~
 Window Geometry:
   Displays:

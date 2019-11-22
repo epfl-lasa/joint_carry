@@ -147,8 +147,13 @@
     <param name="topic_name_right_ds_vel" value="/right/ds_desired_velocity"/>
     <param name="topic_name_left_ds_vel" value="/left/ds_desired_velocity"/>
 
+    <!-- topics to read FT sensors -->
+    <param name="topic_name_right_ft_sensor" value="/right/netft_data"/>
+    <param name="topic_name_left_ft_sensor" value="/left/netft_data"/>
+
     <!-- dynamical system for manipulating the guard  -->
-    <param name="topic_name_guard_desired_velocity" value="/Task1/desired_velocity"/>
+    <!-- <param name="topic_name_guard_desired_velocity" value="/Task1/desired_velocity"/> -->
+    <param name="topic_name_guard_desired_velocity" value="/adapter/adapted_velocity"/>
 
 
 
