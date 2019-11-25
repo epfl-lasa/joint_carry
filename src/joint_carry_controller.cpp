@@ -695,9 +695,9 @@ void JointCarryController::UpdateLeftFTsensor(const geometry_msgs::WrenchStamped
 void JointCarryController::ComputeGuardDisturbance() {
 	double diff_norm = (right_ft_force_ - right_ft_force_last_).squaredNorm() + (left_ft_force_ - left_ft_force_last_).squaredNorm();
 
-	guardPowHighFreq_ = 0.995 * guardPowHighFreq_ + 0.01 * diff_norm;
+	guardPowHighFreq_ = 0.99 * guardPowHighFreq_ + 0.01 * diff_norm;
 
-	guardPowHighFreq_ = (guardPowHighFreq_ > 1) ? 1 : guardPowHighFreq_;
+	guardPowHighFreq_ = (guardPowHighFreq_ > 5) ? 5 : guardPowHighFreq_;
 
 	// ROS_INFO_STREAM_THROTTLE(1, "High freq : " << guardPowHighFreq_);
 
@@ -706,8 +706,8 @@ void JointCarryController::ComputeGuardDisturbance() {
 	pub_guard_disturbance_.publish(msg);
 
 
-	if (guardPowHighFreq_ > 0.5) {
-		tank_disturbance_ += dt_ * (guardPowHighFreq_ > 0.5);
+	if (guardPowHighFreq_ > 1) {
+		tank_disturbance_ += dt_ * guardPowHighFreq_;
 	}
 	else {
 		tank_disturbance_ = 0;
@@ -716,7 +716,7 @@ void JointCarryController::ComputeGuardDisturbance() {
 	msg.data = tank_disturbance_;
 	pub_tank_disturbance_.publish(msg);
 
-	if (tank_disturbance_ > 2) {
+	if (tank_disturbance_ > 1) {
 		ROS_WARN_STREAM_THROTTLE(1, "Detecting unsual force patterns !!!");
 		if (!flag_dist_occured_) {
 			flag_dist_occured_ = true;
@@ -724,7 +724,7 @@ void JointCarryController::ComputeGuardDisturbance() {
 		}
 		last_time_dist_ = ros::Time::now();
 	}
-	else if (flag_dist_occured_ && (ros::Time::now() - last_time_dist_).toSec() > 10) {
+	else if (flag_dist_occured_ && (ros::Time::now() - last_time_dist_).toSec() > 5) {
 		ROS_WARN_STREAM_THROTTLE(1, "Unusal force patterns disappeared !!!");
 		flag_dist_occured_ = false;
 		CommandDamping(200, 200, 200);
@@ -746,9 +746,9 @@ void JointCarryController::wait_for_transformtaions() {
 	left_grasp_pose_.setZero();
 	left_grasp_pose_(6) = 1; // quat.w = 1
 
-	while (!update_right_grasp_point() || !update_left_grasp_point() || !UpdateGuardCenterPose()) {
+	while ((!update_right_grasp_point() || !update_left_grasp_point() || !UpdateGuardCenterPose()) && !flagNodeStop_) {
 		ROS_WARN_STREAM_THROTTLE(1, "Waiting for the TFs");
-		sleep(1);
+		sleep(.5);
 	}
 
 }
