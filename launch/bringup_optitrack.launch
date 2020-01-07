@@ -36,22 +36,22 @@
 
   # publish the hardcoded grasp points for the kuka endeffector equipped with the qbhand
   # extracted by running rosrun tf tf_echo guard right_lwr_7_link
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.516, 0.249, 0.176
-  -0.679, 0.702, 0.147, -0.156 /guard /right_grasp 1"/>
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_right" args="0.571, 0.249, 0.176
+  -0.676, 0.717, 0.118, -0.121 /guard /right_grasp 1"/>
 
   # extracted by running rosrun tf tf_echo guard left_lwr_7_link
-  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.518, -0.240, 0.191
-    -0.679, 0.702, 0.147, -0.156 /guard /left_grasp 1"/>
+  <node pkg="tf" type="static_transform_publisher" name="guard_grasp_left" args="0.574, -0.193, 0.201
+    -0.664, 0.728, 0.114, -0.128 /guard /left_grasp 1"/>
 
 
 
   # two TF for the corner of the guard, computing qbhand distance to these conrners will be more robust
   # extracted by "rosrun tf tf_echo /guard /right_palm" while the right qbhand in the grasping position
-  <node pkg="tf" type="static_transform_publisher" name="guard_corner_right" args="0.436, 0.272, 0
+  <node pkg="tf" type="static_transform_publisher" name="guard_corner_right" args="0.508, 0.250, -0.004
     0, 0, 0, 1 /guard /guard_right_corner 1"/>
 
   # extracted by "rosrun tf tf_echo /guard /left_palm" while the right qbhand in the grasping position
-  <node pkg="tf" type="static_transform_publisher" name="guard_corner_left" args="0.45, -0.22, 0
+  <node pkg="tf" type="static_transform_publisher" name="guard_corner_left" args="0.507, -0.193, 0.013
     0, 0, 0, 1 /guard /guard_left_corner 1"/>
 
 

@@ -6,3 +6,27 @@
 roslaunch lwr_simple_example real.launch robot_name:=right_lwr robot_world:=right_lwr_base
 
 roslaunch lwr_fri lwr_fri_console.launch robot_name:=right_lwr
+
+
+
+
+# test passive ds on the right
+
+rostopic pub /right_lwr/joint_controllers/passive_ds_command_vel geometry_msgs/Twist "linear:
+  x: 0.0
+  y: 0.0
+  z: 0.0
+angular:
+  x: 0.0
+  y: 0.0
+  z: 0.0" -r 100
+
+
+rostopic pub /right_lwr/joint_controllers/passive_ds_command_orient geometry_msgs/Quaternion "x: 0.0
+y: 1.0
+z: 0.0
+w: 0.0" -r 100
+
+
+and then change the gains in the reconfigure
+

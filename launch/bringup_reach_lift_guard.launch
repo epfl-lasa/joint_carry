@@ -111,7 +111,8 @@
     <param name="topic_name_left_ds_vel" value="/left/ds_desired_velocity"/>
 
     <!-- dynamical system for manipulating the guard  -->
-    <param name="topic_name_guard_desired_velocity" value="/Task1/desired_velocity"/>
+    <!-- <param name="topic_name_guard_desired_velocity" value="/Task1/desired_velocity"/> -->
+    <param name="topic_name_guard_desired_velocity" value="/obstacle_avoidance/modulated_velocity"/>
 
 
 

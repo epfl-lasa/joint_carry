@@ -364,8 +364,8 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 		left_lwr_vel *= (vel_limit / left_lwr_vel.norm() );
 	}
 
-	ROS_INFO_STREAM_THROTTLE(2, "DS vel for right lwr: " << right_lwr_vel.transpose() );
-	ROS_INFO_STREAM_THROTTLE(2, "DS vel for left lwr:  " << left_lwr_vel.transpose() );
+	ROS_INFO_STREAM_THROTTLE(2, "DS vel for right lwr: (" <<  right_lwr_vel.norm() << ")" << right_lwr_vel.transpose() );
+	ROS_INFO_STREAM_THROTTLE(2, "DS vel for left lwr:  (" <<  left_lwr_vel.norm()  <<  ")" <<left_lwr_vel.transpose() );
 
 
 	// sending the DS vels to the robot
@@ -631,9 +631,10 @@ void JointCarryController::UpdateLeftDSVelocity(const geometry_msgs::TwistStampe
 
 void JointCarryController::UpdateGuardDesiredVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg) {
 
-	guard_desired_vel_(0) = msg->twist.linear.x;
-	guard_desired_vel_(1) = msg->twist.linear.y;
-	guard_desired_vel_(2) = msg->twist.linear.z;
+	guard_desired_vel_(0) = (1-filter_ratio_) * guard_desired_vel_(0) + filter_ratio_ * msg->twist.linear.x;
+	guard_desired_vel_(1) = (1-filter_ratio_) * guard_desired_vel_(1) + filter_ratio_ * msg->twist.linear.y;
+	guard_desired_vel_(2) = (1-filter_ratio_) * guard_desired_vel_(2) + filter_ratio_ * msg->twist.linear.z;
+
 
 }
 
