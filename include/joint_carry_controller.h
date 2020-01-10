@@ -110,6 +110,7 @@ private:
 	ros::Subscriber sub_left_ft_sensor_;
 
 	ros::Subscriber sub_guard_desired_velocity_;
+	ros::Subscriber sub_guard_modulated_difference_;
 
 	ros::Publisher pub_guard_disturbance_;
 	ros::Publisher pub_tank_disturbance_;
@@ -138,7 +139,7 @@ private:
 	std::string topic_name_left_ds_vel_;
 
 	std::string topic_name_guard_desired_velocity_;
-
+	std::string topic_name_guard_modulated_difference_;
 
 
 	std::string topic_name_guard_pose_;
@@ -236,8 +237,19 @@ private:
 	ros::Time last_time_dist_;
 	bool flag_dist_occured_;
 
+	bool flag_obstacle_;
+
 
 	bool flagNodeStop_;
+
+
+	Vector3d guard_rot_stiffness_follower_;
+	Vector3d guard_rot_stiffness_obstacle_;
+	Vector3d guard_rot_stiffness_disturbance_;
+
+	Vector3d guard_rot_stiffness_;
+
+	double modulation_threshold_;
 
 
 public:
@@ -264,6 +276,7 @@ public:
 	                     std::string topic_name_right_ds_vel,
 	                     std::string topic_name_left_ds_vel,
 	                     std::string topic_name_guard_desired_velocity,
+	                     std::string topic_name_guard_modulated_difference,
 	                     double hand_max_closure,
 	                     double hand_grasp_trigger_dist,
 	                     double hand_grasp_complete_dist,
@@ -305,7 +318,10 @@ private:
 	void UpdateLeftDSVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
 
 	void UpdateGuardDesiredVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg);
+	void ObserveObstacleModulation(const geometry_msgs::TwistStamped::ConstPtr& msg);
 
+
+	void UpdateGuardStiffness();
 	void UpdateGuardWeightCancelation();
 
 

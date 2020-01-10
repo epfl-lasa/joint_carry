@@ -46,6 +46,7 @@ int main(int argc, char **argv)
   std::string topic_name_left_ds_vel;
 
   std::string topic_name_guard_desired_velocity;
+  std::string topic_name_guard_modulated_difference;
 
   double hand_max_closure;
   double hand_grasp_trigger_dist;
@@ -56,8 +57,6 @@ int main(int argc, char **argv)
 
 
   double filter_time_constant;
-
-
 
 
   if (!nh.getParam("topic_name_right_robot_pose", topic_name_right_robot_pose))   {
@@ -166,6 +165,12 @@ int main(int argc, char **argv)
   }
 
 
+    if (!nh.getParam("topic_name_guard_modulated_difference", topic_name_guard_modulated_difference))   {
+    ROS_ERROR("Couldn't retrieve the topic name for the difference vel caused by modulation. ");
+    // return -1;
+  }
+
+
   if (!nh.getParam("hand_max_closure", hand_max_closure))   {
     ROS_ERROR("Couldn't retrieve the maximum closure for the QBhand. ");
     // return -1;
@@ -233,6 +238,7 @@ int main(int argc, char **argv)
       topic_name_right_ds_vel,
       topic_name_left_ds_vel,
       topic_name_guard_desired_velocity,
+      topic_name_guard_modulated_difference,
       hand_max_closure,
       hand_grasp_trigger_dist,
       hand_grasp_complete_dist,

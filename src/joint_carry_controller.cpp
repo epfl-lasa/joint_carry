@@ -29,6 +29,7 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
         std::string topic_name_right_ds_vel,
         std::string topic_name_left_ds_vel,
         std::string topic_name_guard_desired_velocity,
+        std::string topic_name_guard_modulated_difference,
         double hand_max_closure,
         double hand_grasp_trigger_dist,
         double hand_grasp_complete_dist,
@@ -59,6 +60,7 @@ JointCarryController::JointCarryController(ros::NodeHandle &n,
 	  topic_name_right_ds_vel_(topic_name_right_ds_vel),
 	  topic_name_left_ds_vel_(topic_name_left_ds_vel),
 	  topic_name_guard_desired_velocity_(topic_name_guard_desired_velocity),
+	  topic_name_guard_modulated_difference_(topic_name_guard_modulated_difference),
 	  hand_max_closure_(hand_max_closure),
 	  hand_grasp_trigger_dist_(hand_grasp_trigger_dist),
 	  hand_grasp_complete_dist_(hand_grasp_complete_dist),
@@ -140,12 +142,56 @@ bool JointCarryController::Init() {
 	                              &JointCarryController::UpdateGuardDesiredVelocity,
 	                              this, ros::TransportHints().reliable().tcpNoDelay());
 
+	sub_guard_modulated_difference_ = nh_.subscribe(topic_name_guard_modulated_difference_, 1,
+	                                  &JointCarryController::ObserveObstacleModulation,
+	                                  this, ros::TransportHints().reliable().tcpNoDelay());
+
+
+
 
 
 	pub_guard_disturbance_ = nh_.advertise<std_msgs::Float32>("guard_disturbance", 1);
 	pub_tank_disturbance_ = nh_.advertise<std_msgs::Float32>("tank_disturbance", 1);
 
 
+
+
+	std::vector<double> temp_vec;
+	if (!nh_.getParam("guard_rot_stiffness_follower", temp_vec))   {
+		ROS_ERROR("Couldn't retrieve the guard rotation sitffness in the follower condition. ");
+		// return -1;
+	} else {
+		guard_rot_stiffness_follower_ << temp_vec[0] , temp_vec[1] , temp_vec[2];
+		guard_rot_stiffness_ << temp_vec[0] , temp_vec[1] , temp_vec[2];
+	}
+
+
+
+	if (!nh_.getParam("guard_rot_stiffness_obstacle", temp_vec))   {
+		ROS_ERROR("Couldn't retrieve the guard rotation sitffness in the obstacle condition. ");
+		// return -1;
+	} else {
+		guard_rot_stiffness_obstacle_ << temp_vec[0] , temp_vec[1] , temp_vec[2];
+	}
+
+
+	if (!nh_.getParam("guard_rot_stiffness_disturbance", temp_vec))   {
+		ROS_ERROR("Couldn't retrieve the guard rotation sitffness in the disturbance condition. ");
+		// return -1;
+	} else {
+		guard_rot_stiffness_disturbance_ << temp_vec[0] , temp_vec[1] , temp_vec[2];
+
+	}
+
+
+	if (!nh_.getParam("modulation_threshold", modulation_threshold_))   {
+		ROS_ERROR("Couldn't retrieve the modulation threshod for detecting presence of an obstacle. ");
+		modulation_threshold_ = 0.2;
+		// return -1;
+	}
+
+
+	
 
 
 
@@ -182,7 +228,7 @@ bool JointCarryController::Init() {
 
 	filter_ratio_ = dt_ / (filter_time_constant_ + dt_);
 
-
+	flag_obstacle_ = false;
 	flag_dist_occured_ = false;
 	last_time_dist_ = ros::Time::now();
 
@@ -244,7 +290,7 @@ bool JointCarryController::Init() {
 	}
 	else {
 		ROS_ERROR("The ros node has a problem.");
-			ShutDownController();
+		ShutDownController();
 
 		return false;
 	}
@@ -281,6 +327,7 @@ void JointCarryController::Run() {
 		}
 		else {
 			ROS_INFO_STREAM_THROTTLE(2, "Control the guard dynamics");
+			UpdateGuardStiffness();
 			ComputeGuardDesiredDynamics();
 		}
 
@@ -291,7 +338,9 @@ void JointCarryController::Run() {
 			ROS_INFO_STREAM_THROTTLE(2, "---------------------------------------------\n" <<
 			                         "Distance to right grasp point: " << right_palm_guard_distance_ << " (" <<  right_hand_closure_.closure[0] << ")" << "\n" <<
 			                         "Distance to left grasp point:  " <<   left_palm_guard_distance_ << " (" <<  left_hand_closure_.closure[0] << ")"  << "\n" <<
-			                         "DS vel for guard center: " << guard_desired_vel_.transpose()     );
+			                         "DS vel for guard center: " << guard_desired_vel_.transpose()    << "\n" <<
+			                         "Guard stiffness " << guard_rot_stiffness_.transpose() << "\n" <<
+			                         "Flag for obstacle" << flag_obstacle_);
 		}
 
 		ComputeGuardDisturbance();
@@ -327,24 +376,28 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 		qr.coeffs() << -qr.coeffs();
 	}
 
+	// qd = clamp_quat(qd , qr , 0.2);
+
+
 	Eigen::Quaterniond q_err = qr * qd.inverse();
 	Eigen::AngleAxisd err_axang(q_err);
 
 
 	// in case of a disturbance, we forget about the linear motion and only try to keep the guard balanced.
-	Vector3d guard_desired_angular_vel;
+	Vector3d guard_angular_err = err_axang.axis() * err_axang.angle();
+	Vector3d guard_desired_angular_vel = -1 *  guard_rot_stiffness_.array() * guard_angular_err.array();
+
+
 	Vector3d right_lwr_vel;
 	Vector3d left_lwr_vel;
 
 	if (!flag_dist_occured_) {
 
-		Vector3d guard_desired_angular_vel = -1 * guard_ori_damp_ * err_axang.axis() * err_axang.angle();
 		right_lwr_vel = guard_desired_angular_vel.cross(guard_to_right_ee_in_world_) + guard_desired_vel_;
 		left_lwr_vel  = guard_desired_angular_vel.cross(guard_to_left_ee_in_world_) + guard_desired_vel_;
 
 	} else {
 
-		guard_desired_angular_vel = -2 * guard_ori_damp_ * err_axang.axis() * err_axang.angle();
 		right_lwr_vel = guard_desired_angular_vel.cross(guard_to_right_ee_in_world_);
 		left_lwr_vel  = guard_desired_angular_vel.cross(guard_to_left_ee_in_world_);
 
@@ -354,7 +407,7 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 
 
 
-	double vel_limit = 0.15;
+	double vel_limit = 0.2;
 
 	if (right_lwr_vel.norm() > vel_limit) {
 		right_lwr_vel *= (vel_limit / right_lwr_vel.norm() );
@@ -365,7 +418,7 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 	}
 
 	ROS_INFO_STREAM_THROTTLE(2, "DS vel for right lwr: (" <<  right_lwr_vel.norm() << ")" << right_lwr_vel.transpose() );
-	ROS_INFO_STREAM_THROTTLE(2, "DS vel for left lwr:  (" <<  left_lwr_vel.norm()  <<  ")" <<left_lwr_vel.transpose() );
+	ROS_INFO_STREAM_THROTTLE(2, "DS vel for left lwr:  (" <<  left_lwr_vel.norm()  <<  ")" << left_lwr_vel.transpose() );
 
 
 	// sending the DS vels to the robot
@@ -387,6 +440,27 @@ void JointCarryController::ComputeGuardDesiredDynamics() {
 	twist_msg.linear.z = left_lwr_vel(2);
 
 	pub_left_robot_command_vel_.publish(twist_msg);
+
+
+
+}
+
+void JointCarryController::UpdateGuardStiffness() {
+
+	if (flag_dist_occured_) {
+		guard_rot_stiffness_ = (1 - filter_ratio_) * guard_rot_stiffness_
+		                       + filter_ratio_ * guard_rot_stiffness_disturbance_;
+
+	} else if (flag_obstacle_) {
+		guard_rot_stiffness_ =  (1 - filter_ratio_) * guard_rot_stiffness_
+		                        + filter_ratio_ * guard_rot_stiffness_obstacle_;
+
+	} else {
+		guard_rot_stiffness_ =  (1 - filter_ratio_) * guard_rot_stiffness_
+		                        + filter_ratio_ * guard_rot_stiffness_follower_;
+
+	}
+
 
 
 
@@ -631,12 +705,29 @@ void JointCarryController::UpdateLeftDSVelocity(const geometry_msgs::TwistStampe
 
 void JointCarryController::UpdateGuardDesiredVelocity(const geometry_msgs::TwistStamped::ConstPtr& msg) {
 
-	guard_desired_vel_(0) = (1-filter_ratio_) * guard_desired_vel_(0) + filter_ratio_ * msg->twist.linear.x;
-	guard_desired_vel_(1) = (1-filter_ratio_) * guard_desired_vel_(1) + filter_ratio_ * msg->twist.linear.y;
-	guard_desired_vel_(2) = (1-filter_ratio_) * guard_desired_vel_(2) + filter_ratio_ * msg->twist.linear.z;
+	guard_desired_vel_(0) = (1 - filter_ratio_) * guard_desired_vel_(0) + filter_ratio_ * msg->twist.linear.x;
+	guard_desired_vel_(1) = (1 - filter_ratio_) * guard_desired_vel_(1) + filter_ratio_ * msg->twist.linear.y;
+	guard_desired_vel_(2) = (1 - filter_ratio_) * guard_desired_vel_(2) + filter_ratio_ * msg->twist.linear.z;
 
 
 }
+
+void JointCarryController::ObserveObstacleModulation(const geometry_msgs::TwistStamped::ConstPtr& msg) {
+	Vector3d vel_diff;
+
+	vel_diff(0) = msg->twist.linear.x;
+	vel_diff(1) = msg->twist.linear.y;
+	vel_diff(2) = msg->twist.linear.z;
+
+
+	if(vel_diff.norm() > modulation_threshold_){
+		flag_obstacle_ = true;
+	}
+	else{
+		flag_obstacle_ = false;
+	}
+};
+
 
 
 void JointCarryController::UpdateRightRobotEEPose(const geometry_msgs::Pose::ConstPtr& msg) {
