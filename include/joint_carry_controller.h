@@ -252,6 +252,11 @@ private:
 	double modulation_threshold_;
 
 
+	double disturbance_min_pow_;
+	double disturbance_max_pow_;
+	double disturbance_energy_threshold_;
+
+
 public:
 	JointCarryController(ros::NodeHandle &n,
 	                     double frequency,

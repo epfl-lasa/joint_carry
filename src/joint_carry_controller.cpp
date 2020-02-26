@@ -190,9 +190,25 @@ bool JointCarryController::Init() {
 		// return -1;
 	}
 
+	if (!nh_.getParam("disturbance_min_pow", disturbance_min_pow_))   {
+		ROS_ERROR("Couldn't retrieve the minimum power considered as disturbance. ");
+		disturbance_min_pow_ = 1;
+		// return -1;
+	}
 
-	
+	if (!nh_.getParam("disturbance_max_pow", disturbance_max_pow_))   {
+		ROS_ERROR("Couldn't retrieve the maximum power expected for disturbance. ");
+		disturbance_max_pow_ = 5;
+		// return -1;
+	}
 
+
+
+	if (!nh_.getParam("disturbance_energy_threshold", disturbance_energy_threshold_))   {
+		ROS_ERROR("Couldn't retrieve the maximum power expected for disturbance. ");
+		disturbance_energy_threshold_ = 5;
+		// return -1;
+	}
 
 
 
@@ -720,10 +736,10 @@ void JointCarryController::ObserveObstacleModulation(const geometry_msgs::TwistS
 	vel_diff(2) = msg->twist.linear.z;
 
 
-	if(vel_diff.norm() > modulation_threshold_){
+	if (vel_diff.norm() > modulation_threshold_) {
 		flag_obstacle_ = true;
 	}
-	else{
+	else {
 		flag_obstacle_ = false;
 	}
 };
@@ -789,7 +805,7 @@ void JointCarryController::ComputeGuardDisturbance() {
 
 	guardPowHighFreq_ = 0.99 * guardPowHighFreq_ + 0.01 * diff_norm;
 
-	guardPowHighFreq_ = (guardPowHighFreq_ > 5) ? 5 : guardPowHighFreq_;
+	guardPowHighFreq_ = (guardPowHighFreq_ > disturbance_max_pow_) ? disturbance_max_pow_ : guardPowHighFreq_;
 
 	// ROS_INFO_STREAM_THROTTLE(1, "High freq : " << guardPowHighFreq_);
 
@@ -798,7 +814,7 @@ void JointCarryController::ComputeGuardDisturbance() {
 	pub_guard_disturbance_.publish(msg);
 
 
-	if (guardPowHighFreq_ > 1) {
+	if (guardPowHighFreq_ > disturbance_min_pow_) {
 		tank_disturbance_ += dt_ * guardPowHighFreq_;
 	}
 	else {
@@ -808,7 +824,7 @@ void JointCarryController::ComputeGuardDisturbance() {
 	msg.data = tank_disturbance_;
 	pub_tank_disturbance_.publish(msg);
 
-	if (tank_disturbance_ > 1) {
+	if (tank_disturbance_ > disturbance_energy_threshold_) {
 		ROS_WARN_STREAM_THROTTLE(1, "Detecting unsual force patterns !!!");
 		if (!flag_dist_occured_) {
 			flag_dist_occured_ = true;
