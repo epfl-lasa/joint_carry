@@ -765,8 +765,8 @@ void JointCarryController::UpdateRightFTsensor(const geometry_msgs::WrenchStampe
 	right_ft_force_last_ = right_ft_force_;
 
 	right_ft_force_(0) = msg->wrench.force.x;
-	right_ft_force_(1) = msg->wrench.force.x;
-	right_ft_force_(2) = msg->wrench.force.x;
+	right_ft_force_(1) = msg->wrench.force.y;
+	right_ft_force_(2) = msg->wrench.force.z;
 
 
 
@@ -778,8 +778,8 @@ void JointCarryController::UpdateLeftFTsensor(const geometry_msgs::WrenchStamped
 	left_ft_force_last_ = left_ft_force_;
 
 	left_ft_force_(0) = msg->wrench.force.x;
-	left_ft_force_(1) = msg->wrench.force.x;
-	left_ft_force_(2) = msg->wrench.force.x;
+	left_ft_force_(1) = msg->wrench.force.y;
+	left_ft_force_(2) = msg->wrench.force.z;
 
 }
 
