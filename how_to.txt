@@ -30,3 +30,19 @@ w: 0.0" -r 100
 
 and then change the gains in the reconfigure
 
+
+
+
+
+
+## test the old qbhand
+it should be powered 12V
+Connected to USB 
+
+Then launch the "bringup_qbhands.launch"
+
+rostopic pub --once /right/qb_interface_node/qb_class/hand_ref qb_interface/handRef '{closure:[19000.0]}'
+rostopic pub --once /left/qb_interface_node/qb_class/hand_ref qb_interface/handRef '{closure:[19000.0]}'
+
+If the order is wrong (left vs. right), change the confing files 
+'/dev/ttyUSB0' and '/dev/ttyUSB1'
