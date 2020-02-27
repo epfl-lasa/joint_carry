@@ -8,6 +8,6 @@ guard_rot_stiffness_follower: [2, 2, 2]
 guard_rot_stiffness_obstacle: [4, 0.5, 4]
 guard_rot_stiffness_disturbance: [0.5, 4, 0.5]
 modulation_threshold: 0.1
-disturbance_max_pow: 5
-disturbance_min_pow: 1.5
-disturbance_energy_threshold: 2.5
+disturbance_max_pow: 15
+disturbance_min_pow: 2.5
+disturbance_energy_threshold: 2
