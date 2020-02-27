@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(joint_carry)
 
 ## Add support for C++11, supported in ROS Kinetic and newer
-# add_definitions(-std=c++11)
+add_definitions(-std=c++11)
+add_definitions (-DLINUX)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -153,6 +154,11 @@ add_executable(joint_carry_node
 	${SRC_DIR}/joint_carry_controller.cpp
 	${INCLUDE_DIR}/joint_carry_controller.h)
 
+add_executable(joint_carry_recorder 
+	${SRC_DIR}/joint_carry_recorder_node.cpp
+	${SRC_DIR}/joint_carry_recorder.cpp
+	${INCLUDE_DIR}/joint_carry_controller.h)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -170,6 +176,12 @@ add_dependencies(joint_carry_node
 	# external_package_generate_messages_cpp
 	)
 
+add_dependencies(joint_carry_recorder 
+	${${PROJECT_NAME}_EXPORTED_TARGETS} 
+	${catkin_EXPORTED_TARGETS}
+	# external_package_generate_messages_cpp
+	)
+
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -177,6 +189,7 @@ add_dependencies(joint_carry_node
 # )
 
 target_link_libraries(joint_carry_node ${catkin_LIBRARIES} )
+target_link_libraries(joint_carry_recorder ${catkin_LIBRARIES} )
 
 
 #############

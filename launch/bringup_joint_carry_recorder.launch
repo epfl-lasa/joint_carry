@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<launch>
+
+  <param name="recording_path" value="/home/mahdi/joint_carry_ws/Recordings/"/>
+ 
+
+  <node name="recorder_node" pkg="joint_carry" type="joint_carry_recorder" output="screen"/>
+
+
+
+</launch>
