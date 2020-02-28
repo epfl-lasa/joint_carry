@@ -3,9 +3,21 @@
 
 # run the right lwr like this:
 
+make sure that you are on the right branch for the kuka-lwr-ros which is "damping_controller"
+
 roslaunch lwr_simple_example real.launch robot_name:=right_lwr robot_world:=right_lwr_base
 
 roslaunch lwr_fri lwr_fri_console.launch robot_name:=right_lwr
+
+
+
+you can ssh into ....170 and run from the same terminator
+
+roslaunch lwr_simple_example real.launch robot_name:=left_lwr robot_world:=left_lwr_base
+
+roslaunch lwr_fri lwr_fri_console.launch robot_name:=left_lwr
+
+
 
 
 
@@ -41,8 +53,34 @@ Connected to USB
 
 Then launch the "bringup_qbhands.launch"
 
-rostopic pub --once /right/qb_interface_node/qb_class/hand_ref qb_interface/handRef '{closure:[19000.0]}'
-rostopic pub --once /left/qb_interface_node/qb_class/hand_ref qb_interface/handRef '{closure:[19000.0]}'
+rostopic pub --once /right/qb_interface_node/qb_class/hand_ref qb_interface/handRef '{closure:[0.0]}'
+rostopic pub --once /left/qb_interface_node/qb_class/hand_ref qb_interface/handRef '{closure:[0.0]}'
 
 If the order is wrong (left vs. right), change the confing files 
 '/dev/ttyUSB0' and '/dev/ttyUSB1'
+
+
+
+## Vision system
+You need to have markers for left and right lwr around each robot base.
+They should be called as the following the vision software
+right_lwr_markers (for the one closer to the wall)
+left_lwr_markers (for the other one)
+
+and markers for the guard (name also: guard)
+
+make sure that all the cooridates are aligned with the mocap/world
+
+
+
+
+##
+
+
+
+
+
+
+
+
+

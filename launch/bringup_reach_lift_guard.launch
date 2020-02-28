@@ -127,6 +127,9 @@
 </group>
 
 
+<!-- <node name="record" pkg="rosbag" type="record" args="-a"/> -->
+
+<!-- it is better to rung vision and rviz separately, since they can keep running whereas the controller which can be stopped and started again -->
  <!-- <include file="$(find joint_carry)/launch/bringup_optitrack.launch"/> -->
 
 
