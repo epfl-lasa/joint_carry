@@ -164,11 +164,11 @@ bool joint_carry_recorder::Init()
                                      &joint_carry_recorder::Callback_obstacle_pose,
                                      this,ros::TransportHints().reliable().tcpNoDelay());
 
-  sub_modulated_velocity_ = nh_.subscribe("/right//obstacle_avoidance/modulated_velocity",1,
+  sub_modulated_velocity_ = nh_.subscribe("/obstacle_avoidance/modulated_velocity",1,
                                           &joint_carry_recorder::Callback_modulated_velocity,
                                           this,ros::TransportHints().reliable().tcpNoDelay());
 
-  sub_modulated_difference_ = nh_.subscribe("/right//obstacle_avoidance/modulated_difference",1,
+  sub_modulated_difference_ = nh_.subscribe("/obstacle_avoidance/modulated_difference",1,
                               &joint_carry_recorder::Callback_modulated_difference,
                               this,ros::TransportHints().reliable().tcpNoDelay());
 
